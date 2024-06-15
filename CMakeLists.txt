@@ -3,7 +3,7 @@ project(ITIP_CPP_PR_5_HDL)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(ITIP_CPP_PR_5_HDL main.cpp)
+add_executable(ITIP_CPP_PR_5_HDL main.cpp MainWindow.cpp MainWindow.h DeLorian.cpp DeLorian.h GameObject.cpp GameObject.h)
 
 set(SFML_DIR C:/SFML-2.6.0/lib/cmake/SFML)
 
