@@ -2,21 +2,27 @@
 // Created by anoso on 17.05.2024.
 //
 
-#include <iostream>
 #include "MainWindow.h"
 
+#include <iostream>
+
 // Относительные пути к изображениям.
-#define BACKGROUND_PATH "static/img/background.jpg"
-#define DELOREAN_PATH "static/img/delorean.png"
-#define ROAD_PATH "static/img/road.png"
+#define BACKGROUND_PATH "static/img/background.jpg"  // Фон.
+#define DELOREAN_PATH "static/img/delorean.png"      // ДеЛориан.
+#define ROAD_PATH "static/img/road.png"              // Дорога.
 
 #define ACCELERATOR_PATH "static/img/accelerator.png"
-#define DECELERATOR_PATH "static/img/decelerator.png"
+#define DECELERATOR_1_PATH "static/img/road_cone.png"
+#define DECELERATOR_2_PATH "static/img/road_fence.png"
+#define DECELERATOR_3_PATH "static/img/road_stone.png"
 
-// Относительные пути к фоновой музыке.
+// Относительный путь к фоновой музыке.
 #define MUSIC_PATH "static/music/music.mp3"
 
+#define FONT_PATH "static/fonts/OpenSans-SemiBold.ttf"
+
 MainWindow::MainWindow(VideoMode vm, const std::string &str) : RenderWindow(vm, str) {
+    setVerticalSyncEnabled(true);
 //    this->create(VideoMode(1024, 768), "Back to the Future", sf::Style::Fullscreen);
     setFramerateLimit(60);
 
@@ -43,7 +49,7 @@ MainWindow::MainWindow(VideoMode vm, const std::string &str) : RenderWindow(vm, 
     deLorean.setTexture(images[1]);
     deLorean.setTextureRect(IntRect(0, 0, images[1].getSize().x, images[1].getSize().y));
     deLorean.setScale(0.35, 0.35);
-    deLorean.setPosition(25, (float) (this->getSize().y * 6.75 / 10));
+    deLorean.setPosition(25, (float) (this->getSize().y * 7 / 10));
     sprites.push_back(deLorean);
 
     // Один спрайт дороги располагается в начале экрана
@@ -66,19 +72,22 @@ MainWindow::MainWindow(VideoMode vm, const std::string &str) : RenderWindow(vm, 
     // Инициализация текстур бонусов
     if (!acceleratorTexture.loadFromFile(ACCELERATOR_PATH))
         throw std::runtime_error("Error loading accelerator texture");
-    if (!deceleratorTexture.loadFromFile(DECELERATOR_PATH))
-        throw std::runtime_error("Error loading decelerator texture");
+
+    if (!deceleratorTextures.emplace_back().loadFromFile(DECELERATOR_1_PATH))
+        throw std::runtime_error("Error loading decelerator texture 1");
+    if (!deceleratorTextures.emplace_back().loadFromFile(DECELERATOR_2_PATH))
+        throw std::runtime_error("Error loading decelerator texture 2");
+    if (!deceleratorTextures.emplace_back().loadFromFile(DECELERATOR_3_PATH))
+        throw std::runtime_error("Error loading decelerator texture 3");
 
     // Инициализация спрайтов бонусов
     acceleratorSprite.setTexture(acceleratorTexture);
-    acceleratorSprite.setScale(0.5, 0.5);
-    deceleratorSprite.setTexture(deceleratorTexture);
-    deceleratorSprite.setScale(0.5, 0.5);
+    acceleratorSprite.setScale(0.4f, 0.4f);
 
     // Initialize speedometer cells
     const float cellWidth = 25.0f;
     const float cellHeight = 20.0f;
-    for (int i = 0; i < 8; ++i) {
+    for (int i = 0; i < 11; ++i) {
         RectangleShape cell(Vector2f(cellWidth, cellHeight));
         cell.setFillColor(Color::Black);
         cell.setOutlineColor(Color::White);
@@ -87,8 +96,17 @@ MainWindow::MainWindow(VideoMode vm, const std::string &str) : RenderWindow(vm, 
         speedometerCells.push_back(cell);
     }
 
-    currentSpeed = 11.0f;  // Start with default speed
+    currentSpeed = 8.0f;  // Start with default speed
     UpdateSpeedometer();  // Initial update for speedometer
+
+    if (!font.loadFromFile(FONT_PATH)) {
+        throw std::runtime_error("Failed to load font");
+    }
+
+    speedText.setFont(font);
+    speedText.setCharacterSize(24);
+    speedText.setFillColor(sf::Color::Black);
+    speedText.setPosition(10.0f, 50.0f); // Позиция текста на экране
 }
 
 void MainWindow::DrawBackground() {
@@ -111,8 +129,8 @@ void MainWindow::UpdateRoad() {
     auto &road1 = sprites[2];
     auto &road2 = sprites[3];
 
-    road1.move(-5 * currentSpeed / 11, 0); // Двигаем первый спрайт дороги влево
-    road2.move(-5 * currentSpeed / 11, 0); // Двигаем второй спрайт дороги влево
+    road1.move(-5 * 1.5 * currentSpeed / 11, 0); // Двигаем первый спрайт дороги влево
+    road2.move(-5 * 1.5 * currentSpeed / 11, 0); // Двигаем второй спрайт дороги влево
 
     // Если первый спрайт дороги вышел за пределы экрана, перемещаем его вправо за вторым спрайтом
     if (road1.getPosition().x + road1.getLocalBounds().width * road1.getScale().x < 0) {
@@ -166,7 +184,12 @@ void MainWindow::DrawSpeedometer() {
     for (const auto &cell: speedometerCells) {
         draw(cell);
     }
+
+    // Отображение текущей скорости
+    speedText.setString("Current Speed: " + std::to_string(currentSpeed) + " km/h");
+    draw(speedText);
 }
+
 
 void MainWindow::UpdateSpeedometer() {
     int activeCells = static_cast<int>(currentSpeed / speedIncrement);
@@ -186,34 +209,89 @@ void MainWindow::UpdateSpeedometer() {
 }
 
 void MainWindow::UpdateBonuses() {
-    if (bonusTimer.getElapsedTime().asSeconds() > 5.0f) {
-        if (!hasAccelerator && !hasDecelerator) {
-            int lane = rand() % 2; // Случайный выбор полосы (0 или 1)
-            float y = (lane == 0) ? (float) (this->getSize().y * 7 / 10) : (float) (this->getSize().y * 8.5 / 10);
-            float x = this->getSize().x; // Появление за пределами экрана справа
+    // Если прошло более трёх секунд с момента последнего бонуса
+    if (bonusTimer.getElapsedTime().asSeconds() > 3.0f) {
+        // Сбросить таймер
+        bonusTimer.restart();
 
-            if (rand() % 2 == 0) {
-                hasAccelerator = true;
-                acceleratorSprite.setPosition(x, y);
-                acceleratorSprite.setScale(0.10, 0.10);
-            } else {
-                hasDecelerator = true;
-                deceleratorSprite.setPosition(x, y);
-                deceleratorSprite.setScale(0.10, 0.10);
+        // Проверяем, есть ли уже активный бонус (ускоритель или замедлитель)
+        if (hasAccelerator || hasDecelerator) {
+            return; // Если есть, просто выходим из функции без генерации нового бонуса
+        }
+
+        // Генерируем случайное число для выбора бонуса (0 - ускоритель, 1 - замедлитель)
+        int bonusType;
+        if (isFirstBonus) {
+            isFirstBonus = false;
+            bonusType = 0;
+        }
+        else
+            bonusType = rand() % 2;
+
+        // Проверяем историю появления замедлителей
+        bool lastThreeWereDecelerators = false;
+        if (deceleratorHistory.size() >= 3) {
+            lastThreeWereDecelerators = (deceleratorHistory[deceleratorHistory.size() - 1] &&
+                                         deceleratorHistory[deceleratorHistory.size() - 2] &&
+                                         deceleratorHistory[deceleratorHistory.size() - 3]);
+        }
+
+        // Если последние три были замедлителями, генерируем ускоритель
+        if (lastThreeWereDecelerators) {
+            bonusType = 0;  // Ускоритель
+        }
+
+        // Проверяем, чтобы не было двух ускорителей подряд
+        if (bonusType == 0 && !deceleratorHistory.empty() && !deceleratorHistory.back()) {
+            // Если последний бонус был ускорителем, генерируем замедлитель
+            bonusType = 1;
+        }
+
+        // Определяем положение появления бонуса
+        int lane = rand() % 2; // Случайный выбор полосы (0 или 1)
+        float y = (lane == 0) ? (float) (getSize().y * 8.25 / 10) : (float) (getSize().y * 9.8 / 10);
+        float x = getSize().x; // Появление за пределами экрана справа
+
+        if (bonusType == 0) {
+            // Ускоритель
+            hasAccelerator = true;
+            acceleratorSprite.setPosition(x, y - acceleratorTexture.getSize().y * acceleratorSprite.getScale().y);
+
+            // Обновляем историю появлений
+            deceleratorHistory.push_back(false); // false для ускорителя
+            if (deceleratorHistory.size() > 3) {
+                deceleratorHistory.erase(
+                        deceleratorHistory.begin());  // Удаляем первый элемент, если история слишком длинная
+            }
+        } else {
+            // Замедлитель
+            hasDecelerator = true;
+            int deceleratorIndex = rand() % 3;  // Случайный выбор индекса замедлителя
+            deceleratorSprite.setTexture(deceleratorTextures[deceleratorIndex]);
+            deceleratorSprite.setScale(0.4f, 0.4f);
+            deceleratorSprite.setPosition(x, y - deceleratorTextures[deceleratorIndex].getSize().y *
+                                                 deceleratorSprite.getScale().y);
+
+            // Добавляем текущий бонус в историю
+            deceleratorHistory.push_back(true); // true для замедлителя
+            if (deceleratorHistory.size() > 3) {
+                deceleratorHistory.erase(
+                        deceleratorHistory.begin());  // Удаляем первый элемент, если история слишком длинная
             }
         }
-        bonusTimer.restart();
     }
 
+    // Обновление позиции ускорителя, если он активен
     if (hasAccelerator) {
-        acceleratorSprite.move(-5 * currentSpeed / 11, 0);
+        acceleratorSprite.move(-5 * 1.5 * currentSpeed / 11, 0);
         if (acceleratorSprite.getPosition().x + acceleratorSprite.getGlobalBounds().width < 0) {
             hasAccelerator = false;
         }
     }
 
+    // Обновление позиции замедлителя, если он активен
     if (hasDecelerator) {
-        deceleratorSprite.move(-5 * currentSpeed / 11, 0);
+        deceleratorSprite.move(-5 * 1.5 * currentSpeed / 11, 0);
         if (deceleratorSprite.getPosition().x + deceleratorSprite.getGlobalBounds().width < 0) {
             hasDecelerator = false;
         }

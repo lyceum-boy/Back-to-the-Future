@@ -33,13 +33,13 @@ void DeLorean::accelerate(MainWindow &window) {
                             window.curMusic.play();
                     if (event.key.scancode == Keyboard::Scan::Up || event.key.scancode == Keyboard::Scan::W) {
                         float x = 25;
-                        float y = (float) (window.getSize().y * 6.75 / 10);
+                        float y = (float) (window.getSize().y * 7 / 10);
                         window.sprites[1].setPosition(x, y);
                         window.draw(window.sprites[1]);
                     }
                     if (event.key.scancode == Keyboard::Scan::Down || event.key.scancode == Keyboard::Scan::S) {
                         float x = 25;
-                        float y = (float) (window.getSize().y * 8.25 / 10);
+                        float y = (float) (window.getSize().y * 8.5 / 10);
                         window.sprites[1].setPosition(x, y);
                         window.draw(window.sprites[1]);
                     }

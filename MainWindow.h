@@ -28,19 +28,28 @@ public:
     int state = 0;
     bool quit = false;
 
+    sf::Text speedText;
+
     std::vector<RectangleShape> speedometerCells;
     float currentSpeed;  // Current speed in km/h
     const float maxSpeed = 88.0f;  // Maximum speed in km/h
-    const float speedIncrement = 11.0f;  // Speed increment in km/h
+    const float speedIncrement = 8.0f;  // Speed increment in km/h
 
     // Новые переменные для бонусов
     Texture acceleratorTexture;
-    Texture deceleratorTexture;
     Sprite acceleratorSprite;
+    std::vector<Texture> deceleratorTextures;
     Sprite deceleratorSprite;
+
+    std::vector<bool> deceleratorHistory;  // История появления замедлителей и ускорителей
+
     bool hasAccelerator = false;
     bool hasDecelerator = false;
+
     Clock bonusTimer;
+
+    bool isFirstBonus = true;
+
 
 public:
     MainWindow(VideoMode vm, const std::string &str);
