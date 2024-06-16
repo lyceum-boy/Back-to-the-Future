@@ -14,8 +14,8 @@ using namespace sf;
 class MainWindow : public RenderWindow {
 public:
     std::vector<Vertex> quad;
-    std::vector<Texture> images;
-    std::vector<Sprite> sprites;
+    std::vector<Texture> images;  // Вектор текстур.
+    std::vector<Sprite> sprites;  // Вектор спрайтов.
     std::vector<std::string> songs;
     std::vector<SoundBuffer> buf;
     std::vector<Sound> sounds;
@@ -28,19 +28,42 @@ public:
     int state = 0;
     bool quit = false;
 
+    std::vector<RectangleShape> speedometerCells;
+    float currentSpeed;  // Current speed in km/h
+    const float maxSpeed = 88.0f;  // Maximum speed in km/h
+    const float speedIncrement = 11.0f;  // Speed increment in km/h
+
+    // Новые переменные для бонусов
+    Texture acceleratorTexture;
+    Texture deceleratorTexture;
+    Sprite acceleratorSprite;
+    Sprite deceleratorSprite;
+    bool hasAccelerator = false;
+    bool hasDecelerator = false;
+    Clock bonusTimer;
+
 public:
     MainWindow(VideoMode vm, const std::string &str);
 
     void DrawBackground();
 
+    void DrawSpeedometer();
+
+    void UpdateSpeedometer();
+
+    void UpdateRoad(); // Декларация метода обновления дороги
+
     void PollEvents();
 
-    bool IsItTimeYet(int time) {
+    void UpdateBonuses(); // Декларация метода обновления бонусов
+
+    void CheckCollisions(); // Декларация метода проверки коллизий
+
+    static bool IsItTimeYet(int time) {
         if (time > 25)
             return true;
         return false;
     };
-
 };
 
 

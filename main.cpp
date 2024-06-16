@@ -6,6 +6,9 @@
  * Вариант 4
  * Задание 3 */
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "cert-msc51-cpp"
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -16,22 +19,22 @@
 #include <SFML/Audio.hpp>
 
 #include "MainWindow.h"
-#include "DeLorian.h"
+#include "DeLorean.h"
 
 using namespace sf;
 
 int main(int argc, char *argv[]) {
     srand(time(nullptr));
 
-    MainWindow window(VideoMode(1024, 768), "Назад в будущее");
-
-    DeLorian deLorian;
+    MainWindow window(VideoMode(1024, 768), "Back to the Future");
+    DeLorean deLorean;
 
     while (window.isOpen()) {
         window.clear(Color::White);
-        deLorian.accelerate(window);
+        deLorean.accelerate(window);
         window.close();
     }
-
     return 0;
 }
+
+#pragma clang diagnostic pop
