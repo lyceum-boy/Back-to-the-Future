@@ -34,6 +34,7 @@ int main(int argc, char *argv[]) {
     while (window.isOpen()) {
         window.clear(Color::White);
         deLorean.accelerate(window);
+        window.UpdateTimer(); // Update the timer
         window.close();
     }
     return 0;

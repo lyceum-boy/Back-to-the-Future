@@ -50,6 +50,13 @@ public:
 
     bool isFirstBonus = true;
 
+    Clock countdownClock;      // Clock to track elapsed time
+    float remainingTime;       // Remaining time in seconds
+    Text timerText;            // Text to display the timer
+
+    Texture lightningTexture;  // Текстура молнии
+    Sprite lightningSprite;    // Спрайт молнии
+    Text gameOverText;         // Текст "Вы проиграли"
 
 public:
     MainWindow(VideoMode vm, const std::string &str);
@@ -73,6 +80,10 @@ public:
             return true;
         return false;
     };
+
+    void UpdateTimer(); // Update the timer
+
+    void ShowGameOver();       // Метод для отображения экрана проигрыша
 };
 
 

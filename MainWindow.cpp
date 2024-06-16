@@ -5,6 +5,8 @@
 #include "MainWindow.h"
 
 #include <iostream>
+#include <locale>
+#include <codecvt>
 
 // Относительные пути к изображениям.
 #define BACKGROUND_PATH "static/img/background.jpg"  // Фон.
@@ -107,6 +109,18 @@ MainWindow::MainWindow(VideoMode vm, const std::string &str) : RenderWindow(vm, 
     speedText.setCharacterSize(24);
     speedText.setFillColor(sf::Color::Black);
     speedText.setPosition(10.0f, 50.0f); // Позиция текста на экране
+
+    remainingTime = 100.0f; // 1 minute 40 seconds
+
+    if (!font.loadFromFile(FONT_PATH)) {
+        throw std::runtime_error("Failed to load font");
+    }
+
+    timerText.setFont(font);
+    timerText.setCharacterSize(24);
+    timerText.setFillColor(sf::Color::Black);
+    timerText.setPosition(this->getSize().x - 150.0f, 10.0f); // Position timer at top right
+
 }
 
 void MainWindow::DrawBackground() {
@@ -123,6 +137,8 @@ void MainWindow::DrawBackground() {
     }
 
     draw(mainTitle);
+    draw(timerText); // Draw the timer
+
 }
 
 void MainWindow::UpdateRoad() {
@@ -224,8 +240,7 @@ void MainWindow::UpdateBonuses() {
         if (isFirstBonus) {
             isFirstBonus = false;
             bonusType = 0;
-        }
-        else
+        } else
             bonusType = rand() % 2;
 
         // Проверяем историю появления замедлителей
@@ -316,4 +331,19 @@ void MainWindow::CheckCollisions() {
         UpdateSpeedometer();
         hasDecelerator = false;
     }
+}
+
+void MainWindow::UpdateTimer() {
+    float elapsed = countdownClock.getElapsedTime().asSeconds();
+    remainingTime -= elapsed;
+    countdownClock.restart();
+
+    if (remainingTime <= 0) {
+        remainingTime = 0;
+        quit = true; // End the game
+    }
+
+
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> cv;
+    timerText.setString(cv.from_bytes("Осталось: ") + std::to_string(static_cast<int>(remainingTime)) + " с");
 }
