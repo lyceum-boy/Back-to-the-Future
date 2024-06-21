@@ -8,6 +8,8 @@
 #include <locale>
 #include <codecvt>
 
+#include "DeLorean.h"
+
 // Относительные пути к изображениям.
 #define BACKGROUND_PATH "static/img/background.jpg"  // Фон.
 #define DELOREAN_PATH "static/img/delorean.png"      // ДеЛориан.
@@ -23,9 +25,7 @@
 
 #define FONT_PATH "static/fonts/OpenSans-SemiBold.ttf"
 
-MainWindow::MainWindow(VideoMode vm, const std::string &str) : RenderWindow(vm, str) {
-    setVerticalSyncEnabled(true);
-//    this->create(VideoMode(1024, 768), "Back to the Future", sf::Style::Fullscreen);
+MainWindow::MainWindow(VideoMode vm, const std::string &str, int i) : RenderWindow(vm, str, i) {
     setFramerateLimit(60);
 
     Texture tmp;
@@ -38,6 +38,36 @@ MainWindow::MainWindow(VideoMode vm, const std::string &str) : RenderWindow(vm, 
     if (!tmp.loadFromFile(ROAD_PATH))
         throw std::runtime_error("Error");
     images.push_back(tmp);
+
+    // Инициализация текстур бонусов
+    if (!acceleratorTexture.loadFromFile(ACCELERATOR_PATH))
+        throw std::runtime_error("Error loading accelerator texture");
+    if (!deceleratorTextures.emplace_back().loadFromFile(DECELERATOR_1_PATH))
+        throw std::runtime_error("Error loading decelerator texture 1");
+    if (!deceleratorTextures.emplace_back().loadFromFile(DECELERATOR_2_PATH))
+        throw std::runtime_error("Error loading decelerator texture 2");
+    if (!deceleratorTextures.emplace_back().loadFromFile(DECELERATOR_3_PATH))
+        throw std::runtime_error("Error loading decelerator texture 3");
+
+    if (!font.loadFromFile(FONT_PATH)) {
+        throw std::runtime_error("Failed to load font");
+    }
+
+    init();
+}
+
+void MainWindow::init() {
+
+     hasAccelerator = false;
+     hasDecelerator = false;
+
+     bonusTimer.restart();
+
+    isFirstBonus = true;
+    deceleratorHistory.clear();
+    sprites.clear();
+    songs.clear();
+    speedometerCells.clear();
 
     Sprite background;
     background.setTexture(images[0]);
@@ -71,17 +101,6 @@ MainWindow::MainWindow(VideoMode vm, const std::string &str) : RenderWindow(vm, 
 
     songs.emplace_back(MUSIC_PATH);
 
-    // Инициализация текстур бонусов
-    if (!acceleratorTexture.loadFromFile(ACCELERATOR_PATH))
-        throw std::runtime_error("Error loading accelerator texture");
-
-    if (!deceleratorTextures.emplace_back().loadFromFile(DECELERATOR_1_PATH))
-        throw std::runtime_error("Error loading decelerator texture 1");
-    if (!deceleratorTextures.emplace_back().loadFromFile(DECELERATOR_2_PATH))
-        throw std::runtime_error("Error loading decelerator texture 2");
-    if (!deceleratorTextures.emplace_back().loadFromFile(DECELERATOR_3_PATH))
-        throw std::runtime_error("Error loading decelerator texture 3");
-
     // Инициализация спрайтов бонусов
     acceleratorSprite.setTexture(acceleratorTexture);
     acceleratorSprite.setScale(0.4f, 0.4f);
@@ -101,10 +120,6 @@ MainWindow::MainWindow(VideoMode vm, const std::string &str) : RenderWindow(vm, 
     currentSpeed = 8.0f;  // Start with default speed
     UpdateSpeedometer();  // Initial update for speedometer
 
-    if (!font.loadFromFile(FONT_PATH)) {
-        throw std::runtime_error("Failed to load font");
-    }
-
     speedText.setFont(font);
     speedText.setCharacterSize(24);
     speedText.setFillColor(sf::Color::Black);
@@ -112,15 +127,10 @@ MainWindow::MainWindow(VideoMode vm, const std::string &str) : RenderWindow(vm, 
 
     remainingTime = 100.0f; // 1 minute 40 seconds
 
-    if (!font.loadFromFile(FONT_PATH)) {
-        throw std::runtime_error("Failed to load font");
-    }
-
     timerText.setFont(font);
     timerText.setCharacterSize(24);
     timerText.setFillColor(sf::Color::Black);
     timerText.setPosition(this->getSize().x - 150.0f, 10.0f); // Position timer at top right
-
 }
 
 void MainWindow::DrawBackground() {
@@ -158,41 +168,6 @@ void MainWindow::UpdateRoad() {
     if (road2.getPosition().x + road2.getLocalBounds().width * road2.getScale().x < 0) {
         road2.setPosition(road1.getPosition().x + road1.getLocalBounds().width * road1.getScale().x,
                           road2.getPosition().y);
-    }
-}
-
-void MainWindow::PollEvents() {
-    sf::Event event{};
-    while (pollEvent(event)) {
-        switch (event.type) {
-            case sf::Event::Closed:
-                quit = true;
-                break;
-            case sf::Event::KeyPressed:
-                if (event.key.scancode == Keyboard::Scan::Escape)
-                    quit = true;
-                if (event.key.scancode == Keyboard::Scan::Space)
-                    sounds[0].play();
-                if (event.key.scancode == Keyboard::Scan::Tab)
-                    if (curMusic.openFromFile(songs[rand() % 3]))
-                        curMusic.play();
-                if (event.key.scancode == Keyboard::Scan::Enter)
-                    if (curMusic.getStatus() == SoundSource::Status::Playing)
-                        curMusic.pause();
-                if (event.key.scancode == Keyboard::Scan::W) {
-                    float x, y;
-                    std::cout << "delorean" << std::endl;
-
-                    x = sprites[1].getPosition().x;
-                    y = sprites[1].getPosition().y - 100;
-                    sprites[1].setPosition(x, y);
-                    draw(sprites[1]);
-                } else if (curMusic.getStatus() == SoundSource::Status::Paused)
-                    curMusic.play();
-                break;
-            default:
-                break;
-        }
     }
 }
 
@@ -342,7 +317,6 @@ void MainWindow::UpdateTimer() {
         remainingTime = 0;
         quit = true; // End the game
     }
-
 
     std::wstring_convert<std::codecvt_utf8<wchar_t>> cv;
     timerText.setString(cv.from_bytes("Осталось: ") + std::to_string(static_cast<int>(remainingTime)) + " с");

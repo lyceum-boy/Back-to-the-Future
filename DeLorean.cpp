@@ -15,9 +15,11 @@ void DeLorean::accelerate(MainWindow &window) {
         sf::Event event{};
         while (window.pollEvent(event)) {
             switch (event.type) {
-                case sf::Event::Closed:
+                case sf::Event::Closed: {
                     window.quit = true;
+                    window.close();
                     break;
+                }
                 case sf::Event::KeyPressed:
                     if (event.key.scancode == Keyboard::Scan::Escape)
                         window.quit = true;
@@ -26,9 +28,12 @@ void DeLorean::accelerate(MainWindow &window) {
                     if (event.key.scancode == Keyboard::Scan::Tab)
                         if (window.curMusic.openFromFile(window.songs[rand() % 3]))
                             window.curMusic.play();
-                    if (event.key.scancode == Keyboard::Scan::Enter)
+                    if (event.key.scancode == Keyboard::Scan::Enter) {
+//    window.create(VideoMode(1024, 768), "Back to the Future", sf::Style::Fullscreen);
+
                         if (window.curMusic.getStatus() == SoundSource::Status::Playing)
                             window.curMusic.pause();
+                    }
                         else if (window.curMusic.getStatus() == SoundSource::Status::Paused)
                             window.curMusic.play();
                     if (event.key.scancode == Keyboard::Scan::Up || event.key.scancode == Keyboard::Scan::W) {
@@ -72,4 +77,7 @@ void DeLorean::accelerate(MainWindow &window) {
             window.mainTimer.restart();
         }
     }
+
+    // После завершения игры возвращаемся в главное меню
+    window.quit = false;
 }

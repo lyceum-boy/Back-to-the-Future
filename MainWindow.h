@@ -59,7 +59,9 @@ public:
     Text gameOverText;         // Текст "Вы проиграли"
 
 public:
-    MainWindow(VideoMode vm, const std::string &str);
+    MainWindow(VideoMode vm, const std::string &str, int i);
+
+    void init();
 
     void DrawBackground();
 
@@ -68,8 +70,6 @@ public:
     void UpdateSpeedometer();
 
     void UpdateRoad(); // Декларация метода обновления дороги
-
-    void PollEvents();
 
     void UpdateBonuses(); // Декларация метода обновления бонусов
 
@@ -83,7 +83,15 @@ public:
 
     void UpdateTimer(); // Update the timer
 
-    void ShowGameOver();       // Метод для отображения экрана проигрыша
+    void resetTimer() {
+        remainingTime = 100.0f; // Reset the timer to 100 seconds
+        countdownClock.restart(); // Restart the clock
+    }
+
+    void reset() {
+        resetTimer();
+        init();
+    }
 };
 
 
