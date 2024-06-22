@@ -8,6 +8,8 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 
+#include "Explosion.h"
+
 using namespace sf;
 
 
@@ -54,9 +56,8 @@ public:
     float remainingTime;       // Remaining time in seconds
     Text timerText;            // Text to display the timer
 
-    Texture lightningTexture;  // Текстура молнии
-    Sprite lightningSprite;    // Спрайт молнии
-    Text gameOverText;         // Текст "Вы проиграли"
+    sf::Texture explosionTexture;
+    std::vector<Explosion> explosions;
 
 public:
     MainWindow(VideoMode vm, const std::string &str, int i);

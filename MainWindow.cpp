@@ -53,6 +53,9 @@ MainWindow::MainWindow(VideoMode vm, const std::string &str, int i) : RenderWind
         throw std::runtime_error("Failed to load font");
     }
 
+    if (!explosionTexture.loadFromFile("static/img/explosion.png"))
+        throw std::runtime_error("Error loading explosion texture");
+
     init();
 }
 
@@ -149,6 +152,9 @@ void MainWindow::DrawBackground() {
     draw(mainTitle);
     draw(timerText); // Draw the timer
 
+    for (auto &explosion : explosions) {
+        explosion.draw(*this);
+    }
 }
 
 void MainWindow::UpdateRoad() {
@@ -286,6 +292,12 @@ void MainWindow::UpdateBonuses() {
             hasDecelerator = false;
         }
     }
+
+    for (auto &explosion : explosions) {
+        explosion.update();
+    }
+    explosions.erase(std::remove_if(explosions.begin(), explosions.end(), [](Explosion &e) { return e.isFinished(); }), explosions.end());
+
 }
 
 void MainWindow::CheckCollisions() {
@@ -305,6 +317,10 @@ void MainWindow::CheckCollisions() {
         }
         UpdateSpeedometer();
         hasDecelerator = false;
+
+        // Создание взрыва
+        sf::Vector2f deceleratorPosition = deceleratorSprite.getPosition();
+        explosions.emplace_back(explosionTexture, deceleratorPosition);
     }
 }
 
