@@ -9,6 +9,9 @@
 #include <SFML/Audio.hpp>
 
 #include "Explosion.h"
+#include "Lightning.h"
+#include "ClockFace.h"
+#include "Thundercloud.h"
 
 using namespace sf;
 
@@ -59,6 +62,14 @@ public:
     sf::Texture explosionTexture;
     std::vector<Explosion> explosions;
 
+    sf::Texture lightningTexture;
+    std::vector<Lightning> lightnings;
+
+    ClockFace* clockFace;
+
+    Texture thundercloudTexture;
+    std::vector<Thundercloud> thunderclouds;
+
 public:
     MainWindow(VideoMode vm, const std::string &str, int i);
 
@@ -73,6 +84,8 @@ public:
     void UpdateRoad(); // Декларация метода обновления дороги
 
     void UpdateBonuses(); // Декларация метода обновления бонусов
+
+    void UpdateAnimations();
 
     void CheckCollisions(); // Декларация метода проверки коллизий
 
@@ -93,6 +106,8 @@ public:
         resetTimer();
         init();
     }
+    void LoadTextures();
+    void CreateThunderclouds();
 };
 
 

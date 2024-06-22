@@ -70,6 +70,7 @@ void DeLorean::accelerate(MainWindow &window) {
             window.DrawSpeedometer();
             window.UpdateRoad();
             window.UpdateBonuses(); // Обновление бонусов
+            window.UpdateAnimations();
             window.CheckCollisions(); // Проверка коллизий
             window.UpdateTimer(); // Update the timer
             window.display();

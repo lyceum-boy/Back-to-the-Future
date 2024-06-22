@@ -1,14 +1,14 @@
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "cert-msc50-cpp"
 //
 // Created by anoso on 17.05.2024.
 //
 
 #include "MainWindow.h"
-
+#include "Lightning.h"
 #include <iostream>
 #include <locale>
 #include <codecvt>
-
-#include "DeLorean.h"
 
 // Относительные пути к изображениям.
 #define BACKGROUND_PATH "static/img/background.jpg"  // Фон.
@@ -19,6 +19,8 @@
 #define DECELERATOR_1_PATH "static/img/road_cone.png"
 #define DECELERATOR_2_PATH "static/img/road_fence.png"
 #define DECELERATOR_3_PATH "static/img/road_stone.png"
+
+#define THUNDERCLOUD_PATH "static/img/thundercloud.png"
 
 // Относительный путь к фоновой музыке.
 #define MUSIC_PATH "static/music/music.mp3"
@@ -56,21 +58,32 @@ MainWindow::MainWindow(VideoMode vm, const std::string &str, int i) : RenderWind
     if (!explosionTexture.loadFromFile("static/img/explosion.png"))
         throw std::runtime_error("Error loading explosion texture");
 
+    if (!lightningTexture.loadFromFile("static/img/lightning.png")) {
+        throw std::runtime_error("Error loading lightning texture");
+    }
+
+    if (!thundercloudTexture.loadFromFile("static/img/thundercloud.png")) {
+        throw std::runtime_error("Error loading thundercloud texture");
+    }
+
     init();
 }
 
 void MainWindow::init() {
 
-     hasAccelerator = false;
-     hasDecelerator = false;
+    hasAccelerator = false;
+    hasDecelerator = false;
 
-     bonusTimer.restart();
+    bonusTimer.restart();
 
     isFirstBonus = true;
     deceleratorHistory.clear();
     sprites.clear();
     songs.clear();
     speedometerCells.clear();
+
+    explosions.clear();
+    lightnings.clear();
 
     Sprite background;
     background.setTexture(images[0]);
@@ -134,10 +147,41 @@ void MainWindow::init() {
     timerText.setCharacterSize(24);
     timerText.setFillColor(sf::Color::Black);
     timerText.setPosition(this->getSize().x - 150.0f, 10.0f); // Position timer at top right
+
+    // Initialize clock face
+    clockFace = new ClockFace(getSize());
+
+    // Initialize thunderclouds
+    CreateThunderclouds();
+}
+
+void MainWindow::CreateThunderclouds() {
+    // thunderclouds.clear();
+
+    // Используем текущее время для инициализации генератора случайных чисел
+    std::srand(static_cast<unsigned int>(std::time(nullptr)));
+
+    // Генерируем случайное количество туч (от 5 до 10)
+    int numClouds = rand() % 75 + 50; // От 5 до 10 туч
+
+    // Генерируем тучи со случайными координатами за экраном справа
+    for (int i = 0; i < numClouds; ++i) {
+        float x = getSize().x + rand() % 2000 + 1000; // Случайная координата по X от 1000 до 3999
+        float y = rand() % 10 - 50;    // Случайная координата по Y от 0 до 49
+        float speed = static_cast<float>(rand() % 5 + 5) / 10.0f; // Случайная скорость от 0.5 до 1.0
+
+        thunderclouds.emplace_back(thundercloudTexture, sf::Vector2f(x, y), speed);
+    }
 }
 
 void MainWindow::DrawBackground() {
     draw(sprites[0]);
+
+    // Draw thunderclouds
+    for (auto& thundercloud : thunderclouds) {
+        thundercloud.draw(*this);
+    }
+
     draw(sprites[2]); // Отрисовка дороги
     draw(sprites[3]); // Отрисовка дороги
     draw(sprites[1]);
@@ -152,9 +196,16 @@ void MainWindow::DrawBackground() {
     draw(mainTitle);
     draw(timerText); // Draw the timer
 
-    for (auto &explosion : explosions) {
+    for (auto &explosion: explosions) {
         explosion.draw(*this);
     }
+
+    // Draw lightning
+    for (auto &lightning: lightnings) {
+        lightning.draw(*this);
+    }
+
+    clockFace->draw(*this);
 }
 
 void MainWindow::UpdateRoad() {
@@ -186,7 +237,6 @@ void MainWindow::DrawSpeedometer() {
     speedText.setString("Current Speed: " + std::to_string(currentSpeed) + " km/h");
     draw(speedText);
 }
-
 
 void MainWindow::UpdateSpeedometer() {
     int activeCells = static_cast<int>(currentSpeed / speedIncrement);
@@ -292,12 +342,28 @@ void MainWindow::UpdateBonuses() {
             hasDecelerator = false;
         }
     }
+}
 
-    for (auto &explosion : explosions) {
+void MainWindow::UpdateAnimations() {
+    // Update explosions
+    for (auto &explosion: explosions) {
         explosion.update();
     }
-    explosions.erase(std::remove_if(explosions.begin(), explosions.end(), [](Explosion &e) { return e.isFinished(); }), explosions.end());
+    explosions.erase(std::remove_if(explosions.begin(), explosions.end(), [](Explosion &e) { return e.isFinished(); }),
+                     explosions.end());
 
+    // Update lightning animations
+    for (auto &lightning: lightnings) {
+        lightning.update();
+    }
+    lightnings.erase(std::remove_if(lightnings.begin(), lightnings.end(), [](Lightning &l) { return l.isFinished(); }),
+                     lightnings.end());
+
+    for (auto& thundercloud : thunderclouds) {
+        thundercloud.update(*this, currentSpeed); // Обновление положения тучи
+    }
+
+    clockFace->update(remainingTime);
 }
 
 void MainWindow::CheckCollisions() {
@@ -329,6 +395,11 @@ void MainWindow::UpdateTimer() {
     remainingTime -= elapsed;
     countdownClock.restart();
 
+    if (remainingTime < 5)
+        // Create a lightning instance in the top-right corner
+        if (lightnings.empty())
+            lightnings.emplace_back(lightningTexture, sf::Vector2f(getSize().x - lightningTexture.getSize().x / 2, 0));
+
     if (remainingTime <= 0) {
         remainingTime = 0;
         quit = true; // End the game
@@ -336,4 +407,8 @@ void MainWindow::UpdateTimer() {
 
     std::wstring_convert<std::codecvt_utf8<wchar_t>> cv;
     timerText.setString(cv.from_bytes("Осталось: ") + std::to_string(static_cast<int>(remainingTime)) + " с");
+
+    clockFace->update(remainingTime);
 }
+
+#pragma clang diagnostic pop

@@ -9,8 +9,6 @@
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "cert-msc51-cpp"
 
-#include <iostream>
-#include <string>
 #include <vector>
 #include <cstdlib>
 #include <ctime>
@@ -19,15 +17,13 @@
 #include "MainMenu.h"
 #include "DeLorean.h"
 
-#define FONT_PATH "static/fonts/OpenSans-SemiBold.ttf"
-
 using namespace sf;
 
 enum class GameState {
-    MainMenu,
+    MainMenu,   // Главное меню.
     Playing,
-    HowToPlay,
-    About
+    HowToPlay,  // Подменю "Как играть".
+    About       // Подменю "Об игре".
 };
 
 int main(int argc, char *argv[]) {
@@ -58,8 +54,7 @@ int main(int argc, char *argv[]) {
                 break;
             case GameState::Playing:
                 menu.curMusic.stop();
-                DeLorean deLorean;
-                deLorean.accelerate(window);
+                DeLorean::accelerate(window);
                 gameState = GameState::MainMenu;
                 break;
             case GameState::HowToPlay:
@@ -70,17 +65,17 @@ int main(int argc, char *argv[]) {
                 break;
         }
 
-        Event event;
+        Event event{};
         while (window.pollEvent(event)) {
             if (event.type == Event::Closed) {
                 window.close();
             } else if (event.type == Event::MouseButtonPressed) {
                 Vector2i mousePos = Mouse::getPosition(window);
                 if (gameState == GameState::MainMenu) {
-                    if (buttons[0].getGlobalBounds().contains(mousePos.x, mousePos.y)) {
+                    if (buttons[0].getGlobalBounds().contains((float) mousePos.x, (float) mousePos.y)) {
                         gameState = GameState::Playing;
                         window.reset();
-                    } else if (buttons[1].getGlobalBounds().contains(mousePos.x, mousePos.y)) {
+                    } else if (buttons[1].getGlobalBounds().contains(static_cast<float> (mousePos.x), mousePos.y)) {
                         gameState = GameState::HowToPlay;
                     } else if (buttons[2].getGlobalBounds().contains(mousePos.x, mousePos.y)) {
                         gameState = GameState::About;

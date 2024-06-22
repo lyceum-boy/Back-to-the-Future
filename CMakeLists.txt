@@ -3,7 +3,7 @@ project(ITIP_CPP_PR_5_HDL)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(ITIP_CPP_PR_5_HDL main.cpp MainWindow.cpp MainWindow.h DeLorean.cpp DeLorean.h LightningAnimation.cpp LightningAnimation.h MainMenu.cpp MainMenu.h Explosion.cpp Explosion.h)
+add_executable(ITIP_CPP_PR_5_HDL main.cpp MainWindow.cpp MainWindow.h MainMenu.cpp MainMenu.h DeLorean.cpp DeLorean.h Explosion.cpp Explosion.h Lightning.cpp Lightning.h ClockFace.cpp ClockFace.h Thundercloud.cpp Thundercloud.h)
 
 set(SFML_DIR C:/SFML-2.6.0/lib/cmake/SFML)
 
