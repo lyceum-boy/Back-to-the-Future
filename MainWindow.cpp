@@ -1,31 +1,39 @@
 #pragma clang diagnostic push
-#pragma ide diagnostic ignored "cert-msc50-cpp"
+#pragma ide diagnostic ignored "cert-msc51-cpp"
 //
 // Created by anoso on 17.05.2024.
 //
 
-#include "MainWindow.h"
-#include "Lightning.h"
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "cert-msc50-cpp"
+
 #include <iostream>
 #include <locale>
 #include <codecvt>
+
+#include "MainWindow.h"
+#include "Lightning.h"
 
 // Относительные пути к изображениям.
 #define BACKGROUND_PATH "static/img/background.jpg"  // Фон.
 #define DELOREAN_PATH "static/img/delorean.png"      // ДеЛориан.
 #define ROAD_PATH "static/img/road.png"              // Дорога.
 
-#define ACCELERATOR_PATH "static/img/accelerator.png"
+// Относительные пути к спрайтам.
+#define ACCELERATOR_PATH "static/sprites/accelerator.png"
 #define DECELERATOR_1_PATH "static/img/road_cone.png"
 #define DECELERATOR_2_PATH "static/img/road_fence.png"
 #define DECELERATOR_3_PATH "static/img/road_stone.png"
+#define CHARACTER_PATH "static/img/brown.png"
+
+#define FIRE_PATH "static/img/fire.png" // Добавим путь к текстуре огня
 
 #define THUNDERCLOUD_PATH "static/img/thundercloud.png"
 
 // Относительный путь к фоновой музыке.
 #define MUSIC_PATH "static/music/music.mp3"
 
-#define FONT_PATH "static/fonts/OpenSans-SemiBold.ttf"
+#define FONT_PATH "static/fonts/Industry-Bold_RUS.ttf"
 
 MainWindow::MainWindow(VideoMode vm, const std::string &str, int i) : RenderWindow(vm, str, i) {
     setFramerateLimit(60);
@@ -51,10 +59,6 @@ MainWindow::MainWindow(VideoMode vm, const std::string &str, int i) : RenderWind
     if (!deceleratorTextures.emplace_back().loadFromFile(DECELERATOR_3_PATH))
         throw std::runtime_error("Error loading decelerator texture 3");
 
-    if (!font.loadFromFile(FONT_PATH)) {
-        throw std::runtime_error("Failed to load font");
-    }
-
     if (!explosionTexture.loadFromFile("static/img/explosion.png"))
         throw std::runtime_error("Error loading explosion texture");
 
@@ -66,17 +70,28 @@ MainWindow::MainWindow(VideoMode vm, const std::string &str, int i) : RenderWind
         throw std::runtime_error("Error loading thundercloud texture");
     }
 
+    if (!fireTexture.loadFromFile(FIRE_PATH)) {
+        throw std::runtime_error("Error loading fire texture");
+    }
+
+    if (!font.loadFromFile(FONT_PATH)) {
+        throw std::runtime_error("Failed to load headerFont");
+    }
+
     init();
 }
 
 void MainWindow::init() {
-
     hasAccelerator = false;
     hasDecelerator = false;
+
+     isGameOver = false;
+     isVictory = false;
 
     bonusTimer.restart();
 
     isFirstBonus = true;
+
     deceleratorHistory.clear();
     sprites.clear();
     songs.clear();
@@ -84,6 +99,7 @@ void MainWindow::init() {
 
     explosions.clear();
     lightnings.clear();
+    fireAnimations.clear();
 
     Sprite background;
     background.setTexture(images[0]);
@@ -133,7 +149,8 @@ void MainWindow::init() {
         speedometerCells.push_back(cell);
     }
 
-    currentSpeed = 8.0f;  // Start with default speed
+    currentSpeed = 80.0f;  // Start with default speed
+    maxPlayerSpeed = currentSpeed;
     UpdateSpeedometer();  // Initial update for speedometer
 
     speedText.setFont(font);
@@ -141,23 +158,40 @@ void MainWindow::init() {
     speedText.setFillColor(sf::Color::Black);
     speedText.setPosition(10.0f, 50.0f); // Позиция текста на экране
 
-    remainingTime = 100.0f; // 1 minute 40 seconds
+    remainingTime = 15.0f; // 1 minute 40 seconds
 
     timerText.setFont(font);
     timerText.setCharacterSize(24);
-    timerText.setFillColor(sf::Color::Black);
+    timerText.setFillColor(sf::Color::White);
     timerText.setPosition(this->getSize().x - 150.0f, 10.0f); // Position timer at top right
 
     // Initialize clock face
     clockFace = new ClockFace(getSize());
+
+
+    if (!characterTexture.loadFromFile(CHARACTER_PATH)) {
+        throw std::runtime_error("Error loading character texture");
+    }
+
+    characterSprite.setTexture(characterTexture);
+    characterSprite.setScale(0.1f, 0.1f); // Adjust the scale as needed
+    characterSprite.setOrigin(characterSprite.getLocalBounds().width / 2, characterSprite.getLocalBounds().height / 2); // Set origin to center
+    characterSprite.setPosition((float)this->getSize().x / 2 - 40, 120.0f); // Position the character at the top center
+    isCharacterFalling = false;
+    characterFallSpeed = 1.0f;
+    characterRotationSpeed = 5.0f; // Set initial rotation speed
+
+    isCharacterFlying = false;
+    characterFlySpeed = 2.0f; // Скорость полета
+    characterFlyDirection = 1.0f; // Направление движения (1 - вверх, -1 - вниз)
+    characterFlyMaxY = characterSprite.getPosition().y - 20; // Верхняя граница движения
+    characterFlyMinY = characterSprite.getPosition().y; // Нижняя граница движения
 
     // Initialize thunderclouds
     CreateThunderclouds();
 }
 
 void MainWindow::CreateThunderclouds() {
-    // thunderclouds.clear();
-
     // Используем текущее время для инициализации генератора случайных чисел
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
@@ -166,16 +200,25 @@ void MainWindow::CreateThunderclouds() {
 
     // Генерируем тучи со случайными координатами за экраном справа
     for (int i = 0; i < numClouds; ++i) {
-        float x = getSize().x + rand() % 2000 + 1000; // Случайная координата по X от 1000 до 3999
-        float y = rand() % 10 - 50;    // Случайная координата по Y от 0 до 49
+        float x = static_cast<float>(this->getSize().x + rand() % 2000 + 1000); // Случайная координата по X от 1000 до 3999
+        auto y = static_cast<float>(rand() % 10 - 65);    // Случайная координата по Y от 0 до 49
         float speed = static_cast<float>(rand() % 5 + 5) / 10.0f; // Случайная скорость от 0.5 до 1.0
+        float scale = static_cast<float>(rand() % 5 + 5) / 20.0f; // Случайный масштаб от 0.25 до 0.5
 
-        thunderclouds.emplace_back(thundercloudTexture, sf::Vector2f(x, y), speed);
+        thunderclouds.emplace_back(thundercloudTexture, sf::Vector2f(x, y), speed, scale);
     }
 }
 
+
 void MainWindow::DrawBackground() {
     draw(sprites[0]);
+
+    clockFace->draw(*this);
+
+    // Draw lightning
+    for (auto &lightning: lightnings) {
+        lightning.draw(*this);
+    }
 
     // Draw thunderclouds
     for (auto& thundercloud : thunderclouds) {
@@ -193,19 +236,30 @@ void MainWindow::DrawBackground() {
         draw(deceleratorSprite);
     }
 
-    draw(mainTitle);
-    draw(timerText); // Draw the timer
+    if (!isVictory && !isGameOver) {
+        draw(mainTitle);
+        draw(timerText); // Draw the timer
+    }
 
     for (auto &explosion: explosions) {
         explosion.draw(*this);
     }
 
-    // Draw lightning
-    for (auto &lightning: lightnings) {
-        lightning.draw(*this);
-    }
+    draw(characterSprite);
 
-    clockFace->draw(*this);
+    // Отрисовка анимаций огня
+    for (auto &fire : fireAnimations) {
+        fire.draw(*this);
+    }
+}
+
+void MainWindow::DeLoreanAway() {
+    auto &delorean = sprites[1];
+
+    delorean.move(5 * 0.5 * currentSpeed / 11, 0); // Двигаем первый спрайт дороги влево
+    for (auto &fire :fireAnimations) {
+        fire.sprite.move(-5 * 1.5 * currentSpeed / 11, 0);
+    }
 }
 
 void MainWindow::UpdateRoad() {
@@ -256,6 +310,9 @@ void MainWindow::UpdateSpeedometer() {
 }
 
 void MainWindow::UpdateBonuses() {
+    if (isVictory)
+        return;
+
     // Если прошло более трёх секунд с момента последнего бонуса
     if (bonusTimer.getElapsedTime().asSeconds() > 3.0f) {
         // Сбросить таймер
@@ -345,6 +402,15 @@ void MainWindow::UpdateBonuses() {
 }
 
 void MainWindow::UpdateAnimations() {
+    if (isVictory) {
+        sf::Vector2f deLoreanPos = sprites[1].getPosition();
+        fireAnimations.emplace_back(fireTexture,sf::Vector2f(deLoreanPos.x - 75, deLoreanPos.y - 30));
+        fireAnimations.emplace_back(fireTexture,sf::Vector2f(deLoreanPos.x - 75, deLoreanPos.y - 5));
+    }
+    for (auto &fire : fireAnimations) {
+        fire.update();
+    }
+
     // Update explosions
     for (auto &explosion: explosions) {
         explosion.update();
@@ -363,14 +429,42 @@ void MainWindow::UpdateAnimations() {
         thundercloud.update(*this, currentSpeed); // Обновление положения тучи
     }
 
-    clockFace->update(remainingTime);
+    float time = remainingTime - 5 >= 0 ? remainingTime - 5: 0;
+    clockFace->update(time);
+
+    if (isCharacterFalling) {
+        characterFallSpeed += 0.1f; // Increase falling speed (gravity effect)
+        characterSprite.move(0, characterFallSpeed);
+        characterSprite.rotate(characterRotationSpeed); // Rotate the character around its center
+        if (characterSprite.getPosition().y + characterSprite.getGlobalBounds().height / 2 >= this->getSize().y - 300) {
+            characterSprite.setPosition(characterSprite.getPosition().x, this->getSize().y - characterSprite.getGlobalBounds().height / 2 - 300);
+            isCharacterFalling = false; // Stop the character from falling further
+            characterSprite.setRotation(90.0f); // Set the character to lie horizontally
+        }
+    }
+
+    if (isCharacterFlying) {
+        float newY = characterSprite.getPosition().y - characterFlyDirection * characterFlySpeed;
+
+        // Изменение направления, если достигнута верхняя или нижняя граница
+        if (newY <= characterFlyMaxY || newY >= characterFlyMinY) {
+            characterFlyDirection = -characterFlyDirection;
+        }
+
+        characterSprite.setPosition(characterSprite.getPosition().x, newY);
+        std::cout << characterFlyMaxY << std::endl;
+        std::cout << characterFlyMinY << std::endl;
+        std::cout << newY << std::endl;
+    }
 }
 
 void MainWindow::CheckCollisions() {
     if (hasAccelerator && sprites[1].getGlobalBounds().intersects(acceleratorSprite.getGlobalBounds())) {
         currentSpeed += speedIncrement;
+        maxPlayerSpeed = currentSpeed > maxPlayerSpeed ? currentSpeed : maxPlayerSpeed;
         if (currentSpeed > maxSpeed) {
             currentSpeed = maxSpeed;
+            remainingTime = 5;
         }
         UpdateSpeedometer();
         hasAccelerator = false;
@@ -378,8 +472,9 @@ void MainWindow::CheckCollisions() {
 
     if (hasDecelerator && sprites[1].getGlobalBounds().intersects(deceleratorSprite.getGlobalBounds())) {
         currentSpeed -= speedIncrement;
-        if (currentSpeed < 0) {
+        if (currentSpeed <= 0) {
             currentSpeed = 0;
+            remainingTime = 5;
         }
         UpdateSpeedometer();
         hasDecelerator = false;
@@ -395,20 +490,36 @@ void MainWindow::UpdateTimer() {
     remainingTime -= elapsed;
     countdownClock.restart();
 
-    if (remainingTime < 5)
-        // Create a lightning instance in the top-right corner
-        if (lightnings.empty())
-            lightnings.emplace_back(lightningTexture, sf::Vector2f(getSize().x - lightningTexture.getSize().x / 2, 0));
+    if (remainingTime <= 5) {
+        if (!isVictory)
+            isGameOver = true;
+        if (!isVictory) {
+            currentSpeed = 0;
+            UpdateSpeedometer();
+            // Create a lightning instance in the top-right corner
+            if (lightnings.empty())
+                lightnings.emplace_back(lightningTexture, sf::Vector2f(537, 0));
+            isCharacterFalling = true; // Start the character fall
+        } else {
+            UpdateSpeedometer();
+            if (lightnings.empty())
+                lightnings.emplace_back(lightningTexture, sf::Vector2f(537, 0));
+            isCharacterFlying = true; // Start the character jump
+        }
 
+    }
     if (remainingTime <= 0) {
         remainingTime = 0;
         quit = true; // End the game
     }
 
-    std::wstring_convert<std::codecvt_utf8<wchar_t>> cv;
-    timerText.setString(cv.from_bytes("Осталось: ") + std::to_string(static_cast<int>(remainingTime)) + " с");
+    float time = remainingTime - 5 >= 0 ? remainingTime - 5: 0;
 
-    clockFace->update(remainingTime);
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> cv;
+    timerText.setString(cv.from_bytes("Осталось: ") + std::to_string(static_cast<int>(time)) + " с");
+
+    clockFace->update(time);
 }
 
+#pragma clang diagnostic pop
 #pragma clang diagnostic pop

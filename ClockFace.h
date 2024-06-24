@@ -11,6 +11,7 @@
 class ClockFace {
 public:
     ClockFace(sf::Vector2u windowSize);
+
     void update(float remainingTime);
     void draw(sf::RenderWindow& window);
 
@@ -19,9 +20,11 @@ private:
     sf::RectangleShape hourHand;
     sf::RectangleShape minuteHand;
     sf::RectangleShape secondHand;
-    sf::Vector2f center;
+
+    std::vector<sf::RectangleShape> timeDivisions; // Массив делений времени
 
     void updateHands(float remainingTime);
+    void initializeTimeDivisions(); // Инициализация делений времени
 };
 
 

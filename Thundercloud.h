@@ -12,7 +12,7 @@ using namespace sf;
 
 class Thundercloud {
 public:
-    Thundercloud(sf::Texture& texture, sf::Vector2f position, float speed);
+    Thundercloud(sf::Texture& texture, sf::Vector2f position, float speed, float scale);
 
     void update(sf::RenderWindow& window, float gameSpeed);
     void draw(sf::RenderWindow& window);

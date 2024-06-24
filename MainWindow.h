@@ -8,9 +8,10 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 
-#include "Explosion.h"
-#include "Lightning.h"
 #include "ClockFace.h"
+#include "Explosion.h"
+#include "FireAnimation.h"
+#include "Lightning.h"
 #include "Thundercloud.h"
 
 using namespace sf;
@@ -18,24 +19,23 @@ using namespace sf;
 
 class MainWindow : public RenderWindow {
 public:
-    std::vector<Vertex> quad;
-    std::vector<Texture> images;  // Вектор текстур.
-    std::vector<Sprite> sprites;  // Вектор спрайтов.
-    std::vector<std::string> songs;
+    std::vector<Texture> images;     // Вектор текстур.
+    std::vector<Sprite> sprites;     // Вектор спрайтов.
+    std::vector<std::string> songs;  // Вектор фоновой музыки.
     std::vector<SoundBuffer> buf;
-    std::vector<Sound> sounds;
+    std::vector<Sound> sounds;       // Вектор звуков.
 
     Music curMusic;
     Font font;
     Clock mainTimer;
     Text mainTitle;
 
-    int state = 0;
     bool quit = false;
 
     sf::Text speedText;
 
     std::vector<RectangleShape> speedometerCells;
+    float maxPlayerSpeed;
     float currentSpeed;  // Current speed in km/h
     const float maxSpeed = 88.0f;  // Maximum speed in km/h
     const float speedIncrement = 8.0f;  // Speed increment in km/h
@@ -69,6 +69,26 @@ public:
 
     Texture thundercloudTexture;
     std::vector<Thundercloud> thunderclouds;
+
+    sf::Texture characterTexture;
+    sf::Sprite characterSprite;
+    bool isCharacterFalling = false; // Track falling state
+    float characterFallSpeed = 0.0f; // Speed of the fall
+    float characterRotationSpeed = 0.0f; // Speed of rotation
+
+    bool isCharacterFlying;
+    float characterFlySpeed;
+    float characterFlyDirection;
+    float characterFlyMaxY;
+    float characterFlyMinY;
+
+    bool isGameOver = false;
+    bool isVictory = false;
+
+    std::vector<FireAnimation> fireAnimations;
+    sf::Texture fireTexture;
+
+    bool isDeloreanSpriteMoving = false;
 
 public:
     MainWindow(VideoMode vm, const std::string &str, int i);
@@ -108,6 +128,8 @@ public:
     }
     void LoadTextures();
     void CreateThunderclouds();
+
+    void DeLoreanAway();
 };
 
 

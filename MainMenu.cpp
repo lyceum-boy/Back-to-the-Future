@@ -29,7 +29,7 @@ MainMenu::displayMainMenu(MainWindow &window, std::vector<RectangleShape> &butto
 
     Font font;
     if (!font.loadFromFile(TEXT_FONT_PATH)) {
-        throw std::runtime_error("Failed to load font");
+        throw std::runtime_error("Failed to load headerFont");
     }
 
     if (buttons.empty() && buttonLabels.empty()) {
@@ -88,7 +88,7 @@ MainMenu::displayMainMenu(MainWindow &window, std::vector<RectangleShape> &butto
 void MainMenu::drawBackButton(MainWindow &window) {
     Font font;
     if (!font.loadFromFile(TEXT_FONT_PATH)) {
-        throw std::runtime_error("Failed to load font");
+        throw std::runtime_error("Failed to load headerFont");
     }
 
     // Add back button to buttons and buttonLabels
