@@ -9,15 +9,9 @@
 #include <SFML/Graphics.hpp>
 #include <codecvt>
 #include "MainWindow.h"
+#include "EndScreen.h"
 
-class VictoryMenu {
-public:
-    VictoryMenu();
-
-    void draw(MainWindow &window, int totalTime);
-
-    void PollEvents(MainWindow &window);
-
+class VictoryMenu : public EndScreen {
 private:
     sf::RectangleShape backButton;
     sf::Text victoryText;
@@ -26,6 +20,14 @@ private:
     sf::Font textFont;
 
     std::wstring_convert<std::codecvt_utf8<wchar_t>> cv;
+
+    void draw(MainWindow &window, int totalTime);
+
+public:
+    VictoryMenu();
+
+    void PollEvents(MainWindow &window) override;
+
 };
 
 

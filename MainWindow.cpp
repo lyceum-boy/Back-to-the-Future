@@ -1,31 +1,27 @@
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "cert-msc51-cpp"
 //
 // Created by anoso on 17.05.2024.
 //
 
 #pragma clang diagnostic push
+#pragma ide diagnostic ignored "cert-msc51-cpp"
 #pragma ide diagnostic ignored "cert-msc50-cpp"
 
-#include <iostream>
-#include <locale>
-#include <codecvt>
+#include <codecvt>  // Используется для отрисовки кириллических символов.
 
-#include "MainWindow.h"
-#include "Lightning.h"
+#include "MainWindow.h"  // Класс главного окна программы.
+#include "Lightning.h"   // Класс анимации молнии.
 
 // Относительные пути к изображениям.
-#define BACKGROUND_PATH "static/img/background.jpg"  // Фон.
-#define DELOREAN_PATH "static/img/delorean.png"      // ДеЛориан.
-#define ROAD_PATH "static/img/road.png"              // Дорога.
+#define BACKGROUND_PATH "static/img/background.jpg"  // Фон для сцены с часовой башней.
 
 // Относительные пути к спрайтам.
+#define DELOREAN_PATH "static/sprites/delorean.png"      // ДеЛориан.
+#define ROAD_PATH "static/sprites/road.png"              // Дорога.
 #define ACCELERATOR_PATH "static/sprites/accelerator.png"
-#define DECELERATOR_1_PATH "static/img/road_cone.png"
-#define DECELERATOR_2_PATH "static/img/road_fence.png"
-#define DECELERATOR_3_PATH "static/img/road_stone.png"
+#define DECELERATOR_1_PATH "static/sprites/road_cone.png"
+#define DECELERATOR_2_PATH "static/sprites/road_fence.png"
+#define DECELERATOR_3_PATH "static/sprites/road_stone.png"
 #define CHARACTER_PATH "static/img/brown.png"
-
 #define FIRE_PATH "static/img/fire.png" // Добавим путь к текстуре огня
 
 #define THUNDERCLOUD_PATH "static/img/thundercloud.png"
@@ -34,6 +30,8 @@
 #define MUSIC_PATH "static/music/music.mp3"
 
 #define FONT_PATH "static/fonts/Industry-Bold_RUS.ttf"
+
+using namespace sf;
 
 MainWindow::MainWindow(VideoMode vm, const std::string &str, int i) : RenderWindow(vm, str, i) {
     setFramerateLimit(60);
@@ -49,7 +47,7 @@ MainWindow::MainWindow(VideoMode vm, const std::string &str, int i) : RenderWind
         throw std::runtime_error("Error");
     images.push_back(tmp);
 
-    // Инициализация текстур бонусов
+    // Инициализация текстур ускоряющих и замедляющих бонусов.
     if (!acceleratorTexture.loadFromFile(ACCELERATOR_PATH))
         throw std::runtime_error("Error loading accelerator texture");
     if (!deceleratorTextures.emplace_back().loadFromFile(DECELERATOR_1_PATH))
@@ -59,6 +57,7 @@ MainWindow::MainWindow(VideoMode vm, const std::string &str, int i) : RenderWind
     if (!deceleratorTextures.emplace_back().loadFromFile(DECELERATOR_3_PATH))
         throw std::runtime_error("Error loading decelerator texture 3");
 
+    // Инициализация
     if (!explosionTexture.loadFromFile("static/img/explosion.png"))
         throw std::runtime_error("Error loading explosion texture");
 
@@ -113,7 +112,7 @@ void MainWindow::init() {
     deLorean.setTexture(images[1]);
     deLorean.setTextureRect(IntRect(0, 0, images[1].getSize().x, images[1].getSize().y));
     deLorean.setScale(0.35, 0.35);
-    deLorean.setPosition(25, (float) (this->getSize().y * 7 / 10));
+    deLorean.setPosition(25, static_cast<float>(this->getSize().y) * 7 / 10.0f);
     sprites.push_back(deLorean);
 
     // Один спрайт дороги располагается в начале экрана
@@ -193,7 +192,7 @@ void MainWindow::init() {
 
 void MainWindow::CreateThunderclouds() {
     // Используем текущее время для инициализации генератора случайных чисел
-    std::srand(static_cast<unsigned int>(std::time(nullptr)));
+    srand(static_cast<unsigned int>(std::time(nullptr)));
 
     // Генерируем случайное количество туч (от 5 до 10)
     int numClouds = rand() % 75 + 50; // От 5 до 10 туч
@@ -452,9 +451,6 @@ void MainWindow::UpdateAnimations() {
         }
 
         characterSprite.setPosition(characterSprite.getPosition().x, newY);
-        std::cout << characterFlyMaxY << std::endl;
-        std::cout << characterFlyMinY << std::endl;
-        std::cout << newY << std::endl;
     }
 }
 
@@ -521,5 +517,4 @@ void MainWindow::UpdateTimer() {
     clockFace->update(time);
 }
 
-#pragma clang diagnostic pop
 #pragma clang diagnostic pop

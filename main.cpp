@@ -23,7 +23,7 @@
 #include "MainMenu.h"    // Класс меню игры.
 #include "DeLorean.h"    // Класс ДеЛориана, логика обработки его управления.
 
-#define ICON_PATH "static/img/icon.ico"  // Иконка мини-игры.
+#define ICON_PATH "static/img/icon.png"  // Иконка мини-игры.
 
 using namespace sf;
 

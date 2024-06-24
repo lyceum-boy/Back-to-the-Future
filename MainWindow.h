@@ -35,8 +35,8 @@ public:
     sf::Text speedText;
 
     std::vector<RectangleShape> speedometerCells;
-    float maxPlayerSpeed;
-    float currentSpeed;  // Current speed in km/h
+    float maxPlayerSpeed{};
+    float currentSpeed{};  // Current speed in km/h
     const float maxSpeed = 88.0f;  // Maximum speed in km/h
     const float speedIncrement = 8.0f;  // Speed increment in km/h
 
@@ -56,7 +56,7 @@ public:
     bool isFirstBonus = true;
 
     Clock countdownClock;      // Clock to track elapsed time
-    float remainingTime;       // Remaining time in seconds
+    float remainingTime{};       // Remaining time in seconds
     Text timerText;            // Text to display the timer
 
     sf::Texture explosionTexture;
@@ -65,7 +65,7 @@ public:
     sf::Texture lightningTexture;
     std::vector<Lightning> lightnings;
 
-    ClockFace* clockFace;
+    ClockFace* clockFace{};
 
     Texture thundercloudTexture;
     std::vector<Thundercloud> thunderclouds;
@@ -76,11 +76,11 @@ public:
     float characterFallSpeed = 0.0f; // Speed of the fall
     float characterRotationSpeed = 0.0f; // Speed of rotation
 
-    bool isCharacterFlying;
-    float characterFlySpeed;
-    float characterFlyDirection;
-    float characterFlyMaxY;
-    float characterFlyMinY;
+    bool isCharacterFlying{};
+    float characterFlySpeed{};
+    float characterFlyDirection{};
+    float characterFlyMaxY{};
+    float characterFlyMinY{};
 
     bool isGameOver = false;
     bool isVictory = false;

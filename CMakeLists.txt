@@ -15,7 +15,7 @@ add_executable(
         GameOverMenu.cpp GameOverMenu.h
         VictoryMenu.cpp VictoryMenu.h
         FireAnimation.cpp FireAnimation.h
-)
+        EndScreen.cpp EndScreen.h)
 
 # set(SFML_STATIC_LIBRARIES TRUE)
 set(SFML_DIR C:/SFML-2.6.0/lib/cmake/SFML)
