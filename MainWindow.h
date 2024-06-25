@@ -5,6 +5,8 @@
 #ifndef ITIP_CPP_PR_5_HDL_MAINWINDOW_H
 #define ITIP_CPP_PR_5_HDL_MAINWINDOW_H
 
+#include <codecvt>
+
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 
@@ -91,6 +93,14 @@ public:
     bool isDeloreanSpriteMoving = false;
 
     bool wasThunder = false;
+    bool isFullscreen = false;
+
+    bool deLoreanOnFirstRoad = true;
+
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> cv;
+
+    float totalPlayerTime{};
+
 public:
     MainWindow(VideoMode vm, const std::string &str, int i);
 

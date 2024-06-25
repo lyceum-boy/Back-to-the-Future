@@ -89,6 +89,20 @@ void VictoryScreen::PollEvents(MainWindow &window, float totalPLayerTime) {
                     event.key.scancode == sf::Keyboard::Scan::Enter) {
                     return;
                 }
+                // Переход в полноэкранный режим при нажатии клавиши F.
+                if (event.key.scancode == Keyboard::Scan::F) {
+                    if (!window.isFullscreen) {
+                        window.isFullscreen = true;
+                        window.create(VideoMode(1024, 768),
+                                      "Back to the Future",
+                                      sf::Style::Fullscreen);
+                    } else {  // И выход из него.
+                        window.isFullscreen = false;
+                        window.create(VideoMode(1024, 768),
+                                      "Back to the Future",
+                                      sf::Style::Titlebar | sf::Style::Close);
+                    }
+                }
             }
         }
     }

@@ -32,6 +32,13 @@
 #define FONT_PATH "static/fonts/Industry-Bold_RUS.ttf"
 
 #define THUNDER_SOUND_PATH "static/sounds/thunder.mp3"
+#define BUMP_SOUND_PATH "static/sounds/bump.mp3"
+#define FUELING_SOUND_PATH "static/sounds/fueling.mp3"
+#define DRIFT_SOUND_PATH "static/sounds/drift.mp3"
+#define START_ENGINE_SOUND_PATH "static/sounds/start_engine.mp3"
+
+#define INITIAL_TIME 100
+#define INITIAL_SPEED 8
 
 using namespace sf;
 
@@ -67,7 +74,7 @@ MainWindow::MainWindow(VideoMode vm, const std::string &str, int i) : RenderWind
         throw std::runtime_error("Error loading lightning texture");
     }
 
-    if (!thundercloudTexture.loadFromFile("static/img/thundercloud.png")) {
+    if (!thundercloudTexture.loadFromFile(THUNDERCLOUD_PATH)) {
         throw std::runtime_error("Error loading thundercloud texture");
     }
 
@@ -98,6 +105,7 @@ void MainWindow::init() {
     songs.clear();
     speedometerCells.clear();
     sounds.clear();
+    buf.clear();
     explosions.clear();
     lightnings.clear();
     fireAnimations.clear();
@@ -150,21 +158,21 @@ void MainWindow::init() {
         speedometerCells.push_back(cell);
     }
 
-    currentSpeed = 80.0f;  // Start with default speed
+    currentSpeed = INITIAL_SPEED;  // Start with default speed
     maxPlayerSpeed = currentSpeed;
     UpdateSpeedometer();  // Initial update for speedometer
 
     speedText.setFont(font);
-    speedText.setCharacterSize(24);
-    speedText.setFillColor(sf::Color::Black);
-    speedText.setPosition(10.0f, 50.0f); // Позиция текста на экране
+    speedText.setCharacterSize(22);
+    speedText.setFillColor(sf::Color::White);
+    speedText.setPosition(10.0f, 40.0f); // Позиция текста на экране
 
-    remainingTime = 15.0f; // 1 minute 40 seconds
+    remainingTime = INITIAL_TIME + 5.0f; // 1 minute 40 seconds
 
     timerText.setFont(font);
     timerText.setCharacterSize(24);
     timerText.setFillColor(sf::Color::White);
-    timerText.setPosition(this->getSize().x - 150.0f, 10.0f); // Position timer at top right
+    timerText.setPosition(this->getSize().x - 175.0f, 7.5f); // Position timer at top right
 
     // Initialize clock face
     clockFace = new ClockFace(getSize());
@@ -199,6 +207,35 @@ void MainWindow::init() {
 
     Sound tmpsound;
     tmpsound.setBuffer(buf[0]);
+    sounds.push_back(tmpsound);
+
+
+    if (!tmpbuf.loadFromFile(BUMP_SOUND_PATH))
+        throw std::runtime_error("Error");
+    buf.push_back(tmpbuf);
+
+    tmpsound.setBuffer(buf[1]);
+    sounds.push_back(tmpsound);
+
+    if (!tmpbuf.loadFromFile(FUELING_SOUND_PATH))
+        throw std::runtime_error("Error");
+    buf.push_back(tmpbuf);
+
+    tmpsound.setBuffer(buf[2]);
+    sounds.push_back(tmpsound);
+
+    if (!tmpbuf.loadFromFile(DRIFT_SOUND_PATH))
+        throw std::runtime_error("Error");
+    buf.push_back(tmpbuf);
+
+    tmpsound.setBuffer(buf[3]);
+    sounds.push_back(tmpsound);
+
+    if (!tmpbuf.loadFromFile(START_ENGINE_SOUND_PATH))
+        throw std::runtime_error("Error");
+    buf.push_back(tmpbuf);
+
+    tmpsound.setBuffer(buf[4]);
     sounds.push_back(tmpsound);
 }
 
@@ -299,7 +336,7 @@ void MainWindow::DrawSpeedometer() {
     }
 
     // Отображение текущей скорости
-    speedText.setString("Current Speed: " + std::to_string(currentSpeed) + " km/h");
+    speedText.setString(cv.from_bytes("Текущая скорость: ") + std::to_string(static_cast<int>(currentSpeed)) + " mph");
     draw(speedText);
 }
 
@@ -456,12 +493,10 @@ void MainWindow::UpdateAnimations() {
 
     if (isCharacterFlying) {
         float newY = characterSprite.getPosition().y - characterFlyDirection * characterFlySpeed;
-
         // Изменение направления, если достигнута верхняя или нижняя граница
         if (newY <= characterFlyMaxY || newY >= characterFlyMinY) {
             characterFlyDirection = -characterFlyDirection;
         }
-
         characterSprite.setPosition(characterSprite.getPosition().x, newY);
     }
 }
@@ -472,16 +507,20 @@ void MainWindow::CheckCollisions() {
         maxPlayerSpeed = currentSpeed > maxPlayerSpeed ? currentSpeed : maxPlayerSpeed;
         if (currentSpeed > maxSpeed) {
             currentSpeed = maxSpeed;
+            totalPlayerTime = INITIAL_TIME - remainingTime + 5.0;
             remainingTime = 5;
         }
         UpdateSpeedometer();
         hasAccelerator = false;
+
+        sounds[2].play();
     }
 
     if (hasDecelerator && sprites[1].getGlobalBounds().intersects(deceleratorSprite.getGlobalBounds())) {
         currentSpeed -= speedIncrement;
         if (currentSpeed <= 0) {
             currentSpeed = 0;
+            totalPlayerTime = INITIAL_TIME - remainingTime + 5.0;
             remainingTime = 5;
         }
         UpdateSpeedometer();
@@ -490,6 +529,8 @@ void MainWindow::CheckCollisions() {
         // Создание взрыва
         sf::Vector2f deceleratorPosition = deceleratorSprite.getPosition();
         explosions.emplace_back(explosionTexture, deceleratorPosition);
+
+        sounds[1].play();
     }
 }
 
@@ -526,10 +567,7 @@ void MainWindow::UpdateTimer() {
     }
 
     float time = remainingTime - 5 >= 0 ? remainingTime - 5: 0;
-
-    std::wstring_convert<std::codecvt_utf8<wchar_t>> cv;
-    timerText.setString(cv.from_bytes("Осталось: ") + std::to_string(static_cast<int>(time)) + " с");
-
+    timerText.setString(cv.from_bytes("Осталось: ") + std::to_string(static_cast<int>(time)) + " s");
     clockFace->update(time);
 }
 

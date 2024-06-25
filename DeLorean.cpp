@@ -14,6 +14,8 @@ void DeLorean::accelerate(MainWindow &window) {
     GameOverScreen gameOverMenu;
     VictoryScreen victoryMenu;
 
+    window.sounds[4].play();
+
     while (!window.quit) {
         // window.PollEvents();
 
@@ -28,33 +30,49 @@ void DeLorean::accelerate(MainWindow &window) {
                 case sf::Event::KeyPressed:
                     if (event.key.scancode == Keyboard::Scan::Escape)
                         window.quit = true;
-//                    if (event.key.scancode == Keyboard::Scan::Space)
-//                        window.sounds[0].play();
-                    if (event.key.scancode == Keyboard::Scan::Tab)
-                        if (window.curMusic.openFromFile(window.songs[rand() % 3]))
-                            window.curMusic.play();
-                    if (event.key.scancode == Keyboard::Scan::Enter) {
-//    window.create(VideoMode(1024, 768), "Back to the Future", sf::Style::Fullscreen);
-
-                        if (window.curMusic.getStatus() == SoundSource::Status::Playing)
-                            window.curMusic.pause();
-                        else if (window.curMusic.getStatus() == SoundSource::Status::Paused)
-                            window.curMusic.play();
+                    // Переход в полноэкранный режим при нажатии клавиши F.
+                    if (event.key.scancode == Keyboard::Scan::F) {
+                        if (!window.isFullscreen) {
+                            window.isFullscreen = true;
+                            window.create(VideoMode(1024, 768),
+                                          "Back to the Future",
+                                          sf::Style::Fullscreen);
+                        } else {  // И выход из него.
+                            window.isFullscreen = false;
+                            window.create(VideoMode(1024, 768),
+                                          "Back to the Future",
+                                          sf::Style::Titlebar | sf::Style::Close);
+// todo
+                            //                            // Загрузка иконки окна мини-игры.
+//                            sf::Image icon;
+//                            icon.loadFromFile(ICON_PATH);
+//                            window.setIcon(icon.getSize().x, icon.getSize().y, icon.getPixelsPtr());
+                        }
                     }
                     if (event.key.scancode == Keyboard::Scan::Up || event.key.scancode == Keyboard::Scan::W) {
                         if (window.remainingTime - 5 >= 0) {
-                            float x = 25;
-                            float y = (float) (window.getSize().y * 7 / 10);
-                            window.sprites[1].setPosition(x, y);
-                            window.draw(window.sprites[1]);
+                            if (!window.deLoreanOnFirstRoad) {
+                                float x = 25;
+                                float y = static_cast<float>(window.getSize().y * 7.0 / 10);
+                                window.sprites[1].setPosition(x, y);
+                                window.draw(window.sprites[1]);
+
+                                window.deLoreanOnFirstRoad = true;
+                                window.sounds[3].play();
+                            }
                         }
                     }
                     if (event.key.scancode == Keyboard::Scan::Down || event.key.scancode == Keyboard::Scan::S) {
                         if (window.remainingTime - 5 >= 0) {
-                            float x = 25;
-                            float y = (float) (window.getSize().y * 8.5 / 10);
-                            window.sprites[1].setPosition(x, y);
-                            window.draw(window.sprites[1]);
+                            if (window.deLoreanOnFirstRoad) {
+                                float x = 25;
+                                float y = static_cast<float>(window.getSize().y * 8.5 / 10);
+                                window.sprites[1].setPosition(x, y);
+                                window.draw(window.sprites[1]);
+
+                                window.deLoreanOnFirstRoad = false;
+                                window.sounds[3].play();
+                            }
                         }
                     }
                     if (event.key.scancode == Keyboard::Scan::Space) {
@@ -92,9 +110,9 @@ void DeLorean::accelerate(MainWindow &window) {
         // Проверка на условия проигрыша или победы
         if (window.remainingTime <= 0) {
             if (window.isGameOver) {
-                gameOverMenu.PollEvents(window, window.maxSpeed);
+                gameOverMenu.PollEvents(window, window.maxPlayerSpeed);
             } else {
-                victoryMenu.PollEvents(window, static_cast<float>(window.remainingTime - 5)); // todo
+                victoryMenu.PollEvents(window, window.totalPlayerTime);
             }
             break;
         }

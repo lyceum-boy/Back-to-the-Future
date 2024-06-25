@@ -112,11 +112,36 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char *argv[]) {
                         gameState = GameState::MainMenu;
                     }
                 }
-            } else if (event.type == Event::KeyPressed && event.key.code == Keyboard::Escape) {
-                // Переход из подменю в Главное меню при нажатии клавиши Escape.
-                gameState = GameState::MainMenu;
+            } else if (event.type == Event::KeyPressed) {
+                // Переход из подменю в Главное меню при нажатии клавиши Escape или Enter.
+                if (event.key.code == Keyboard::Escape || event.key.code == Keyboard::Enter) {
+                    if (gameState == GameState::MainMenu) {
+                        // Из Главного меню выход только по клавише Escape.
+                        if (event.key.code == Keyboard::Escape) {
+                            window.close();  // Закрытие окна.
+                        }
+                    } else {
+                        // Выход в Главное меню.
+                        gameState = GameState::MainMenu;
+                    }
+                }
+                // Переход в полноэкранный режим при нажатии клавиши F.
+                if (event.key.scancode == Keyboard::Scan::F) {
+                    if (!window.isFullscreen) {
+                        window.isFullscreen = true;
+                        window.create(VideoMode(1024, 768),
+                                      "Back to the Future",
+                                      sf::Style::Fullscreen);
+                    } else {  // И выход из него.
+                        window.isFullscreen = false;
+                        window.create(VideoMode(1024, 768),
+                                      "Back to the Future",
+                                      sf::Style::Titlebar | sf::Style::Close);
+                    }
+                }
             }
         }
+
         // Проигрывание музыки Главного меню, если она остановилась.
         if (menu.curMusic.getStatus() == SoundSource::Status::Stopped) {
             if (menu.curMusic.openFromFile(menu.songs[0]))
