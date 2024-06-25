@@ -31,6 +31,8 @@
 
 #define FONT_PATH "static/fonts/Industry-Bold_RUS.ttf"
 
+#define THUNDER_SOUND_PATH "static/sounds/thunder.mp3"
+
 using namespace sf;
 
 MainWindow::MainWindow(VideoMode vm, const std::string &str, int i) : RenderWindow(vm, str, i) {
@@ -95,7 +97,7 @@ void MainWindow::init() {
     sprites.clear();
     songs.clear();
     speedometerCells.clear();
-
+    sounds.clear();
     explosions.clear();
     lightnings.clear();
     fireAnimations.clear();
@@ -188,6 +190,16 @@ void MainWindow::init() {
 
     // Initialize thunderclouds
     CreateThunderclouds();
+
+
+    SoundBuffer tmpbuf;
+    if (!tmpbuf.loadFromFile(THUNDER_SOUND_PATH))
+        throw std::runtime_error("Error");
+    buf.push_back(tmpbuf);
+
+    Sound tmpsound;
+    tmpsound.setBuffer(buf[0]);
+    sounds.push_back(tmpsound);
 }
 
 void MainWindow::CreateThunderclouds() {
@@ -487,8 +499,12 @@ void MainWindow::UpdateTimer() {
     countdownClock.restart();
 
     if (remainingTime <= 5) {
-        if (!isVictory)
+        if (!isVictory && !isGameOver) {
             isGameOver = true;
+
+            curMusic.setVolume(70);
+            sounds[0].play();
+        }
         if (!isVictory) {
             currentSpeed = 0;
             UpdateSpeedometer();

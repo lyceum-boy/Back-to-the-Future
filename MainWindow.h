@@ -90,6 +90,7 @@ public:
 
     bool isDeloreanSpriteMoving = false;
 
+    bool wasThunder = false;
 public:
     MainWindow(VideoMode vm, const std::string &str, int i);
 

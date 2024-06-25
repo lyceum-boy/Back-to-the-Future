@@ -95,7 +95,6 @@ void MainMenu::drawBackButton(MainWindow &window) {
     backButton.setSize(Vector2f(200, 50));
     backButton.setOutlineThickness(2);
     backButton.setOutlineColor(Color::White);
-    backButton.setPosition(50, window.getSize().y - 100);
 
     Text backLabel(cv.from_bytes("Назад"), font, 30);
     backLabel.setFillColor(Color::White);
@@ -114,7 +113,6 @@ void MainMenu::drawBackButton(MainWindow &window) {
         backButton.setFillColor(Color(125, 125, 125, 150)); // Полупрозрачный черный
         backButton.setSize(Vector2f(200, 50)); // Обычный размер
         backButton.setPosition(50, window.getSize().y - 100);
-
         backLabel.setPosition(
                 backButton.getPosition().x + (backButton.getSize().x - backLabel.getLocalBounds().width) / 2,
                 backButton.getPosition().y + (backButton.getSize().y - backLabel.getLocalBounds().height) / 2 - 5

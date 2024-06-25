@@ -16,22 +16,12 @@ using namespace sf;
 
 class EndScreen {
 private:
-    RectangleShape backButton;
-
-    Text victoryText;
-    Text timeText;
-
-    Font headerFont;
-    Font textFont;
-
-    std::wstring_convert<std::codecvt_utf8<wchar_t>> cv;
-
-    void draw(MainWindow &window, int totalTime);
+    virtual void draw(MainWindow &window, float score) = 0;
 
 public:
     EndScreen() = default;
 
-    virtual void PollEvents(MainWindow &window);
+    virtual void PollEvents(MainWindow &window, float score) = 0;
 };
 
 

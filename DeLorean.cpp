@@ -4,15 +4,15 @@
 
 #include <iostream>
 #include "DeLorean.h"
-#include "GameOverMenu.h"
-#include "VictoryMenu.h"
+#include "GameOverScreen.h"
+#include "VictoryScreen.h"
 
 void DeLorean::accelerate(MainWindow &window) {
     if (window.curMusic.openFromFile(window.songs[rand() % 1]))
         window.curMusic.play();
 
-    GameOverMenu gameOverMenu;
-    VictoryMenu victoryMenu;
+    GameOverScreen gameOverMenu;
+    VictoryScreen victoryMenu;
 
     while (!window.quit) {
         // window.PollEvents();
@@ -71,7 +71,7 @@ void DeLorean::accelerate(MainWindow &window) {
 
         int time = window.mainTimer.getElapsedTime().asMilliseconds();
         if (window.curMusic.getStatus() == SoundSource::Status::Stopped) {
-            if (window.curMusic.openFromFile(window.songs[rand() % 1]))
+            if (window.curMusic.openFromFile(window.songs[0]))
                 window.curMusic.play();
         }
         if (window.IsItTimeYet(time)) {
@@ -92,9 +92,9 @@ void DeLorean::accelerate(MainWindow &window) {
         // Проверка на условия проигрыша или победы
         if (window.remainingTime <= 0) {
             if (window.isGameOver) {
-                gameOverMenu.PollEvents(window);
+                gameOverMenu.PollEvents(window, window.maxSpeed);
             } else {
-                victoryMenu.PollEvents(window);
+                victoryMenu.PollEvents(window, static_cast<float>(window.remainingTime - 5)); // todo
             }
             break;
         }
@@ -106,6 +106,8 @@ void DeLorean::accelerate(MainWindow &window) {
                 window.isGameOver = false;
                 window.isDeloreanSpriteMoving = true;
                 window.remainingTime = 5;
+                window.curMusic.setVolume(70);
+                window.sounds[0].play();
             }
         }
     }
