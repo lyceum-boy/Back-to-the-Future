@@ -109,6 +109,7 @@ void DeLorean::accelerate(MainWindow &window) {
 
         // Проверка на условия проигрыша или победы
         if (window.remainingTime <= 0) {
+            window.curMusic.setVolume(75);
             if (window.isGameOver) {
                 gameOverMenu.PollEvents(window, window.maxPlayerSpeed);
             } else {
@@ -117,17 +118,6 @@ void DeLorean::accelerate(MainWindow &window) {
             break;
         }
 
-        if (window.currentSpeed >= 88) {
-            // todo: набранная скорость в момент выхода таймера
-            if (!window.isVictory) {
-                window.isVictory = true;
-                window.isGameOver = false;
-                window.isDeloreanSpriteMoving = true;
-                window.remainingTime = 5;
-                window.curMusic.setVolume(70);
-                window.sounds[0].play();
-            }
-        }
     }
 
     // После завершения игры возвращаемся в главное меню

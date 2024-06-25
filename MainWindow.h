@@ -101,6 +101,7 @@ public:
 
     float totalPlayerTime{};
 
+
 public:
     MainWindow(VideoMode vm, const std::string &str, int i);
 

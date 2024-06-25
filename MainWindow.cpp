@@ -36,6 +36,7 @@
 #define FUELING_SOUND_PATH "static/sounds/fueling.mp3"
 #define DRIFT_SOUND_PATH "static/sounds/drift.mp3"
 #define START_ENGINE_SOUND_PATH "static/sounds/start_engine.mp3"
+#define ACCELERATE_SOUND_PATH "static/sounds/accelerate.mp3"
 
 #define INITIAL_TIME 100
 #define INITIAL_SPEED 8
@@ -90,6 +91,8 @@ MainWindow::MainWindow(VideoMode vm, const std::string &str, int i) : RenderWind
 }
 
 void MainWindow::init() {
+    curMusic.setVolume(75);
+
     hasAccelerator = false;
     hasDecelerator = false;
 
@@ -236,6 +239,13 @@ void MainWindow::init() {
     buf.push_back(tmpbuf);
 
     tmpsound.setBuffer(buf[4]);
+    sounds.push_back(tmpsound);
+
+    if (!tmpbuf.loadFromFile(ACCELERATE_SOUND_PATH))
+        throw std::runtime_error("Error");
+    buf.push_back(tmpbuf);
+
+    tmpsound.setBuffer(buf[5]);
     sounds.push_back(tmpsound);
 }
 
@@ -505,11 +515,24 @@ void MainWindow::CheckCollisions() {
     if (hasAccelerator && sprites[1].getGlobalBounds().intersects(acceleratorSprite.getGlobalBounds())) {
         currentSpeed += speedIncrement;
         maxPlayerSpeed = currentSpeed > maxPlayerSpeed ? currentSpeed : maxPlayerSpeed;
-        if (currentSpeed > maxSpeed) {
+
+        if (currentSpeed >= maxSpeed) {
             currentSpeed = maxSpeed;
-            totalPlayerTime = INITIAL_TIME - remainingTime + 5.0;
-            remainingTime = 5;
+            // todo: набранная скорость в момент выхода таймера
+            if (!isVictory) {
+                isVictory = true;
+                isGameOver = false;
+                isDeloreanSpriteMoving = true;
+
+                totalPlayerTime = INITIAL_TIME - remainingTime + 5.0;
+                remainingTime = 5;
+
+                curMusic.setVolume(50);
+                sounds[0].play();
+                sounds[5].play();
+            }
         }
+
         UpdateSpeedometer();
         hasAccelerator = false;
 
@@ -543,7 +566,7 @@ void MainWindow::UpdateTimer() {
         if (!isVictory && !isGameOver) {
             isGameOver = true;
 
-            curMusic.setVolume(70);
+            curMusic.setVolume(50);
             sounds[0].play();
         }
         if (!isVictory) {

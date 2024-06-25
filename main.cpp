@@ -57,6 +57,8 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char *argv[]) {
 
     MainMenu menu;  // Объект, создающий в окне главное меню.
 
+    menu.curMusic.setVolume(50);
+
     // Основной цикл приложения.
     while (window.isOpen()) {
         window.clear(Color::White);
