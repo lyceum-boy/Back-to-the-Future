@@ -126,13 +126,11 @@ void MainMenu::drawBackButton(MainWindow &window) {
 }
 
 void MainMenu::showHowToPlay(MainWindow &window) {
-    Font font;
+    Font font, header_font;
     font.loadFromFile(TEXT_FONT_PATH);
+    header_font.loadFromFile(HEADER_FONT_PATH);
 
-    Text howToPlay(cv.from_bytes("Как играть"), font, 50);
-    howToPlay.setFillColor(Color::Black);
-    howToPlay.setPosition(300, 50);
-
+    // Загрузка текстуры фона
     Texture backgroundTexture;
     if (!backgroundTexture.loadFromFile(SUBMENU_BACKGROUND_PATH)) {
         throw std::runtime_error("Failed to load background texture");
@@ -144,7 +142,53 @@ void MainMenu::showHowToPlay(MainWindow &window) {
     );
     window.draw(background);
 
-    window.draw(howToPlay);
+    // Отрисовка темного полупрозрачного прямоугольника
+    RectangleShape darkOverlay(Vector2f(window.getSize().x - 40, window.getSize().y - 40));
+    darkOverlay.setFillColor(Color(0, 0, 0, 180)); // Черный с полупрозрачностью 180
+    darkOverlay.setPosition(20, 20); // Отступ 20 пикселей от каждого края
+    window.draw(darkOverlay);
+
+    // Отрисовка заголовка "Об игре"
+    Text aboutTitle(cv.from_bytes("как играть"), header_font, 50);
+    aboutTitle.setFillColor(Color::White); // Белый цвет текста
+    aboutTitle.setPosition(315, 50);
+    window.draw(aboutTitle);
+
+    // Отрисовка описания игры
+    Text gameDescription(
+            cv.from_bytes(
+                    "Перемещайте ДеЛориан по двум полосам дороги, собирая \n"
+                    "ускоряющие его бонусы (зелёные канистры с радиоактивным \n"
+                    "топливом). На дороге много препятствий! Старайтесь избегать \n"
+                    "столкновения с тормозящими бонусами: камнями, заборами и \n"
+                    "дорожными конусами, ведь если не успеть разогнаться до 88 миль \n"
+                    "в час до момента, когда стрелки часов пробьют полночь, \n"
+                    "доктор Браун упадёт и вернуться назад в будущее не удастся!"
+            ),
+            font,
+            30
+    );
+    gameDescription.setFillColor(Color::White);
+    gameDescription.setPosition(40, 125); // Позиция описания игры
+    window.draw(gameDescription);
+
+    // Отрисовка заголовка "Об игре"
+    Text developerTitle(cv.from_bytes("управление"), header_font, 50);
+    developerTitle.setFillColor(Color::White); // Белый цвет текста
+    developerTitle.setPosition(285, 425);
+    window.draw(developerTitle);
+
+    // Отрисовка информации о разработчике
+    Text developerInfo(
+            cv.from_bytes(
+                    "[PgUp] или [W]: переместить ДеЛориан на верхнюю дорогу; \n"
+                    "[PgDn] или [S]: переместить ДеЛориан на нижнюю дорогу; \n"
+                    "[Esc]: назад / выход; \n"
+                    "[F]: переход в полноэкранный режим."
+    ), font, 30);
+    developerInfo.setFillColor(Color::White);
+    developerInfo.setPosition(40, 500); // Позиция информации о разработчике
+    window.draw(developerInfo);
 
     drawBackButton(window); // Рисуем кнопку "Назад"
 }

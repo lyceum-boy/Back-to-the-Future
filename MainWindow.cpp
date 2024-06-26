@@ -3,8 +3,8 @@
 //
 
 #pragma clang diagnostic push
-#pragma ide diagnostic ignored "cert-msc51-cpp"
 #pragma ide diagnostic ignored "cert-msc50-cpp"
+#pragma ide diagnostic ignored "cert-msc51-cpp"
 
 #include <codecvt>  // Используется для отрисовки кириллических символов.
 
@@ -15,16 +15,21 @@
 #define BACKGROUND_PATH "static/img/background.jpg"  // Фон для сцены с часовой башней.
 
 // Относительные пути к спрайтам.
-#define DELOREAN_PATH "static/sprites/delorean.png"      // ДеЛориан.
-#define ROAD_PATH "static/sprites/road.png"              // Дорога.
-#define ACCELERATOR_PATH "static/sprites/accelerator.png"
-#define DECELERATOR_1_PATH "static/sprites/road_cone.png"
-#define DECELERATOR_2_PATH "static/sprites/road_fence.png"
-#define DECELERATOR_3_PATH "static/sprites/road_stone.png"
-#define CHARACTER_PATH "static/img/brown.png"
-#define FIRE_PATH "static/img/fire.png" // Добавим путь к текстуре огня
+#define DELOREAN_PATH "static/sprites/delorean.png"  // Спрайт ДеЛориана.
+#define ROAD_PATH "static/sprites/road.png"          // Спрайт дороги.
 
-#define THUNDERCLOUD_PATH "static/img/thundercloud.png"
+#define ACCELERATOR_PATH "static/sprites/accelerator.png"   // Спрайт ускоряющего бонуса (канистры).
+#define DECELERATOR_1_PATH "static/sprites/road_cone.png"   // Спрайт замедляющего бонуса (конуса).
+#define DECELERATOR_2_PATH "static/sprites/road_fence.png"  // Спрайт замедляющего бонуса (забора).
+#define DECELERATOR_3_PATH "static/sprites/road_stone.png"  // Спрайт замедляющего бонуса (камня).
+
+#define DOC_BROWN_PATH "static/sprites/brown.png"            // Спрайт доктора Эмметта Брауна.
+#define THUNDERCLOUD_PATH "static/sprites/thundercloud.png"  // Спрайт грозовых туч.
+
+// Относительные пути к спрайтшитам.
+#define EXPLOSION_PATH "static/spritesheets/explosion.png"   // Спрайтшит анимации взрыва при ударе о замедляющий бонус.
+#define LIGHTNING_PATH "static/spritesheets/lightning.png"   // Спрайтшит анимации молнии, ударяющей в 00:00.
+#define FIRE_TRACE_PATH "static/spritesheets/fire_trace.png" // Спрайтшит анимации огненного следа от колёс ДеЛориана.
 
 // Относительный путь к фоновой музыке.
 #define MUSIC_PATH "static/music/music.mp3"
@@ -67,11 +72,15 @@ MainWindow::MainWindow(VideoMode vm, const std::string &str, int i) : RenderWind
     if (!deceleratorTextures.emplace_back().loadFromFile(DECELERATOR_3_PATH))
         throw std::runtime_error("Error loading decelerator texture 3");
 
+    if (!characterTexture.loadFromFile(DOC_BROWN_PATH)) {
+        throw std::runtime_error("Error loading character texture");
+    }
+
     // Инициализация
-    if (!explosionTexture.loadFromFile("static/img/explosion.png"))
+    if (!explosionTexture.loadFromFile(EXPLOSION_PATH))
         throw std::runtime_error("Error loading explosion texture");
 
-    if (!lightningTexture.loadFromFile("static/img/lightning.png")) {
+    if (!lightningTexture.loadFromFile(LIGHTNING_PATH)) {
         throw std::runtime_error("Error loading lightning texture");
     }
 
@@ -79,7 +88,7 @@ MainWindow::MainWindow(VideoMode vm, const std::string &str, int i) : RenderWind
         throw std::runtime_error("Error loading thundercloud texture");
     }
 
-    if (!fireTexture.loadFromFile(FIRE_PATH)) {
+    if (!fireTexture.loadFromFile(FIRE_TRACE_PATH)) {
         throw std::runtime_error("Error loading fire texture");
     }
 
@@ -91,39 +100,66 @@ MainWindow::MainWindow(VideoMode vm, const std::string &str, int i) : RenderWind
 }
 
 void MainWindow::init() {
+    sprites.clear();     // Вектор спрайтов.
+    songs.clear();  // Вектор фоновой музыки.
+    buf.clear();
+    sounds.clear();       // Вектор звуков.
+
     curMusic.setVolume(75);
 
     hasAccelerator = false;
     hasDecelerator = false;
 
-     isGameOver = false;
-     isVictory = false;
+    isGameOver = false;
+    isVictory = false;
 
     bonusTimer.restart();
 
     isFirstBonus = true;
 
     deceleratorHistory.clear();
-    sprites.clear();
-    songs.clear();
+
     speedometerCells.clear();
-    sounds.clear();
-    buf.clear();
     explosions.clear();
     lightnings.clear();
     fireAnimations.clear();
 
+    // todo ------------------------------------------------------------------
+
+    quit = false;
+
+    hasAccelerator = false;
+    hasDecelerator = false;
+
+    isFirstBonus = true;
+
+    isCharacterFalling = false; // Track falling state
+     characterFallSpeed = 0.0f; // Speed of the fall
+     characterRotationSpeed = 0.0f; // Speed of rotation
+
+    isGameOver = false;
+    isVictory = false;
+
+    isDeloreanSpriteMoving = false;
+
+    isFullscreen = false;
+
+    deLoreanOnFirstRoad = true;
+
+    // ------------------------------------------------------------------------
+
     Sprite background;
     background.setTexture(images[0]);
     background.setScale(
-            (float) this->getSize().x / background.getLocalBounds().width,
-            (float) this->getSize().y / background.getLocalBounds().height
+            static_cast<float>(this->getSize().x) / background.getLocalBounds().width,
+            static_cast<float>(this->getSize().y) / background.getLocalBounds().height
     );
     sprites.push_back(background);
 
     Sprite deLorean;
     deLorean.setTexture(images[1]);
-    deLorean.setTextureRect(IntRect(0, 0, images[1].getSize().x, images[1].getSize().y));
+    deLorean.setTextureRect(
+            IntRect(0, 0, static_cast<int>(images[1].getSize().x), static_cast<int>(images[1].getSize().y)));
     deLorean.setScale(0.35, 0.35);
     deLorean.setPosition(25, static_cast<float>(this->getSize().y) * 7 / 10.0f);
     sprites.push_back(deLorean);
@@ -132,7 +168,7 @@ void MainWindow::init() {
     Sprite road1;
     road1.setTexture(images[2]);
     road1.setScale(1.5, 1);
-    road1.setPosition(0, this->getSize().y - road1.getLocalBounds().height);
+    road1.setPosition(0, static_cast<float>(this->getSize().y) - road1.getLocalBounds().height);
     sprites.push_back(road1);
 
     // Второй спрайт дороги начинается сразу после первого
@@ -140,7 +176,7 @@ void MainWindow::init() {
     road2.setTexture(images[2]);
     road2.setScale(1.5, 1);
     road2.setPosition(road1.getLocalBounds().width * road1.getScale().x,
-                      this->getSize().y - road2.getLocalBounds().height);
+                      static_cast<float>(this->getSize().y) - road2.getLocalBounds().height);
     sprites.push_back(road2);
 
     songs.emplace_back(MUSIC_PATH);
@@ -157,7 +193,7 @@ void MainWindow::init() {
         cell.setFillColor(Color::Black);
         cell.setOutlineColor(Color::White);
         cell.setOutlineThickness(2);
-        cell.setPosition(10.0f + i * (cellWidth), 10.0f);
+        cell.setPosition(10.0f + static_cast<float>(i) * (cellWidth), 10.0f);
         speedometerCells.push_back(cell);
     }
 
@@ -175,20 +211,17 @@ void MainWindow::init() {
     timerText.setFont(font);
     timerText.setCharacterSize(24);
     timerText.setFillColor(sf::Color::White);
-    timerText.setPosition(this->getSize().x - 175.0f, 7.5f); // Position timer at top right
+    timerText.setPosition(static_cast<float>(this->getSize().x) - 175.0f, 7.5f); // Position timer at top right
 
     // Initialize clock face
     clockFace = new ClockFace(getSize());
 
-
-    if (!characterTexture.loadFromFile(CHARACTER_PATH)) {
-        throw std::runtime_error("Error loading character texture");
-    }
-
+    characterSprite.setRotation(0);
     characterSprite.setTexture(characterTexture);
     characterSprite.setScale(0.1f, 0.1f); // Adjust the scale as needed
-    characterSprite.setOrigin(characterSprite.getLocalBounds().width / 2, characterSprite.getLocalBounds().height / 2); // Set origin to center
-    characterSprite.setPosition((float)this->getSize().x / 2 - 40, 120.0f); // Position the character at the top center
+    characterSprite.setOrigin(characterSprite.getLocalBounds().width / 2,
+                              characterSprite.getLocalBounds().height / 2); // Set origin to center
+    characterSprite.setPosition((float) this->getSize().x / 2 - 40, 120.0f); // Position the character at the top center
     isCharacterFalling = false;
     characterFallSpeed = 1.0f;
     characterRotationSpeed = 5.0f; // Set initial rotation speed
@@ -199,54 +232,56 @@ void MainWindow::init() {
     characterFlyMaxY = characterSprite.getPosition().y - 20; // Верхняя граница движения
     characterFlyMinY = characterSprite.getPosition().y; // Нижняя граница движения
 
+    thunderclouds.clear();
+
     // Initialize thunderclouds
     CreateThunderclouds();
 
 
-    SoundBuffer tmpbuf;
-    if (!tmpbuf.loadFromFile(THUNDER_SOUND_PATH))
+    SoundBuffer tmp_buf;
+    if (!tmp_buf.loadFromFile(THUNDER_SOUND_PATH))
         throw std::runtime_error("Error");
-    buf.push_back(tmpbuf);
+    buf.push_back(tmp_buf);
 
-    Sound tmpsound;
-    tmpsound.setBuffer(buf[0]);
-    sounds.push_back(tmpsound);
+    Sound tmp_sound;
+    tmp_sound.setBuffer(buf[0]);
+    sounds.push_back(tmp_sound);
 
 
-    if (!tmpbuf.loadFromFile(BUMP_SOUND_PATH))
+    if (!tmp_buf.loadFromFile(BUMP_SOUND_PATH))
         throw std::runtime_error("Error");
-    buf.push_back(tmpbuf);
+    buf.push_back(tmp_buf);
 
-    tmpsound.setBuffer(buf[1]);
-    sounds.push_back(tmpsound);
+    tmp_sound.setBuffer(buf[1]);
+    sounds.push_back(tmp_sound);
 
-    if (!tmpbuf.loadFromFile(FUELING_SOUND_PATH))
+    if (!tmp_buf.loadFromFile(FUELING_SOUND_PATH))
         throw std::runtime_error("Error");
-    buf.push_back(tmpbuf);
+    buf.push_back(tmp_buf);
 
-    tmpsound.setBuffer(buf[2]);
-    sounds.push_back(tmpsound);
+    tmp_sound.setBuffer(buf[2]);
+    sounds.push_back(tmp_sound);
 
-    if (!tmpbuf.loadFromFile(DRIFT_SOUND_PATH))
+    if (!tmp_buf.loadFromFile(DRIFT_SOUND_PATH))
         throw std::runtime_error("Error");
-    buf.push_back(tmpbuf);
+    buf.push_back(tmp_buf);
 
-    tmpsound.setBuffer(buf[3]);
-    sounds.push_back(tmpsound);
+    tmp_sound.setBuffer(buf[3]);
+    sounds.push_back(tmp_sound);
 
-    if (!tmpbuf.loadFromFile(START_ENGINE_SOUND_PATH))
+    if (!tmp_buf.loadFromFile(START_ENGINE_SOUND_PATH))
         throw std::runtime_error("Error");
-    buf.push_back(tmpbuf);
+    buf.push_back(tmp_buf);
 
-    tmpsound.setBuffer(buf[4]);
-    sounds.push_back(tmpsound);
+    tmp_sound.setBuffer(buf[4]);
+    sounds.push_back(tmp_sound);
 
-    if (!tmpbuf.loadFromFile(ACCELERATE_SOUND_PATH))
+    if (!tmp_buf.loadFromFile(ACCELERATE_SOUND_PATH))
         throw std::runtime_error("Error");
-    buf.push_back(tmpbuf);
+    buf.push_back(tmp_buf);
 
-    tmpsound.setBuffer(buf[5]);
-    sounds.push_back(tmpsound);
+    tmp_sound.setBuffer(buf[5]);
+    sounds.push_back(tmp_sound);
 }
 
 void MainWindow::CreateThunderclouds() {
@@ -258,7 +293,8 @@ void MainWindow::CreateThunderclouds() {
 
     // Генерируем тучи со случайными координатами за экраном справа
     for (int i = 0; i < numClouds; ++i) {
-        float x = static_cast<float>(this->getSize().x + rand() % 2000 + 1000); // Случайная координата по X от 1000 до 3999
+        float x = static_cast<float>(this->getSize().x + rand() % 2000 +
+                                     1000); // Случайная координата по X от 1000 до 3999
         auto y = static_cast<float>(rand() % 10 - 65);    // Случайная координата по Y от 0 до 49
         float speed = static_cast<float>(rand() % 5 + 5) / 10.0f; // Случайная скорость от 0.5 до 1.0
         float scale = static_cast<float>(rand() % 5 + 5) / 20.0f; // Случайный масштаб от 0.25 до 0.5
@@ -266,7 +302,6 @@ void MainWindow::CreateThunderclouds() {
         thunderclouds.emplace_back(thundercloudTexture, sf::Vector2f(x, y), speed, scale);
     }
 }
-
 
 void MainWindow::DrawBackground() {
     draw(sprites[0]);
@@ -279,7 +314,7 @@ void MainWindow::DrawBackground() {
     }
 
     // Draw thunderclouds
-    for (auto& thundercloud : thunderclouds) {
+    for (auto &thundercloud: thunderclouds) {
         thundercloud.draw(*this);
     }
 
@@ -306,7 +341,7 @@ void MainWindow::DrawBackground() {
     draw(characterSprite);
 
     // Отрисовка анимаций огня
-    for (auto &fire : fireAnimations) {
+    for (auto &fire: fireAnimations) {
         fire.draw(*this);
     }
 }
@@ -314,9 +349,9 @@ void MainWindow::DrawBackground() {
 void MainWindow::DeLoreanAway() {
     auto &delorean = sprites[1];
 
-    delorean.move(5 * 0.5 * currentSpeed / 11, 0); // Двигаем первый спрайт дороги влево
-    for (auto &fire :fireAnimations) {
-        fire.sprite.move(-5 * 1.5 * currentSpeed / 11, 0);
+    delorean.move(5 * 0.5f * currentSpeed / 11, 0);
+    for (auto &fire: fireAnimations) {
+        fire.sprite.move(-5 * 1.5f * currentSpeed / 11, 0);
     }
 }
 
@@ -324,8 +359,8 @@ void MainWindow::UpdateRoad() {
     auto &road1 = sprites[2];
     auto &road2 = sprites[3];
 
-    road1.move(-5 * 1.5 * currentSpeed / 11, 0); // Двигаем первый спрайт дороги влево
-    road2.move(-5 * 1.5 * currentSpeed / 11, 0); // Двигаем второй спрайт дороги влево
+    road1.move(-5 * 1.5f * currentSpeed / 11, 0); // Двигаем первый спрайт дороги влево
+    road2.move(-5 * 1.5f * currentSpeed / 11, 0); // Двигаем второй спрайт дороги влево
 
     // Если первый спрайт дороги вышел за пределы экрана, перемещаем его вправо за вторым спрайтом
     if (road1.getPosition().x + road1.getLocalBounds().width * road1.getScale().x < 0) {
@@ -355,7 +390,7 @@ void MainWindow::UpdateSpeedometer() {
 
     for (int i = 0; i < speedometerCells.size(); ++i) {
         if (i < activeCells) {
-            float percent = static_cast<float>(i) / (speedometerCells.size() - 1);
+            float percent = static_cast<float>(i) / (static_cast<float>(speedometerCells.size()) - 1);
             Color color;
             color.r = static_cast<Uint8>(255 * (1 - percent));
             color.g = static_cast<Uint8>(255 * percent);
@@ -411,12 +446,12 @@ void MainWindow::UpdateBonuses() {
         // Определяем положение появления бонуса
         int lane = rand() % 2; // Случайный выбор полосы (0 или 1)
         float y = (lane == 0) ? (float) (getSize().y * 8.25 / 10) : (float) (getSize().y * 9.8 / 10);
-        float x = getSize().x; // Появление за пределами экрана справа
+        float x = static_cast<float>(getSize().x); // Появление за пределами экрана справа
 
         if (bonusType == 0) {
             // Ускоритель
             hasAccelerator = true;
-            acceleratorSprite.setPosition(x, y - acceleratorTexture.getSize().y * acceleratorSprite.getScale().y);
+            acceleratorSprite.setPosition(x, y - static_cast<float>(acceleratorTexture.getSize().y) * acceleratorSprite.getScale().y);
 
             // Обновляем историю появлений
             deceleratorHistory.push_back(false); // false для ускорителя
@@ -430,8 +465,7 @@ void MainWindow::UpdateBonuses() {
             int deceleratorIndex = rand() % 3;  // Случайный выбор индекса замедлителя
             deceleratorSprite.setTexture(deceleratorTextures[deceleratorIndex]);
             deceleratorSprite.setScale(0.4f, 0.4f);
-            deceleratorSprite.setPosition(x, y - deceleratorTextures[deceleratorIndex].getSize().y *
-                                                 deceleratorSprite.getScale().y);
+            deceleratorSprite.setPosition(x, y - static_cast<float>(deceleratorTextures[deceleratorIndex].getSize().y) * deceleratorSprite.getScale().y);
 
             // Добавляем текущий бонус в историю
             deceleratorHistory.push_back(true); // true для замедлителя
@@ -444,7 +478,7 @@ void MainWindow::UpdateBonuses() {
 
     // Обновление позиции ускорителя, если он активен
     if (hasAccelerator) {
-        acceleratorSprite.move(-5 * 1.5 * currentSpeed / 11, 0);
+        acceleratorSprite.move(-5 * 1.5f * currentSpeed / 11, 0);
         if (acceleratorSprite.getPosition().x + acceleratorSprite.getGlobalBounds().width < 0) {
             hasAccelerator = false;
         }
@@ -452,7 +486,7 @@ void MainWindow::UpdateBonuses() {
 
     // Обновление позиции замедлителя, если он активен
     if (hasDecelerator) {
-        deceleratorSprite.move(-5 * 1.5 * currentSpeed / 11, 0);
+        deceleratorSprite.move(-5 * 1.5f * currentSpeed / 11, 0);
         if (deceleratorSprite.getPosition().x + deceleratorSprite.getGlobalBounds().width < 0) {
             hasDecelerator = false;
         }
@@ -462,10 +496,10 @@ void MainWindow::UpdateBonuses() {
 void MainWindow::UpdateAnimations() {
     if (isVictory) {
         sf::Vector2f deLoreanPos = sprites[1].getPosition();
-        fireAnimations.emplace_back(fireTexture,sf::Vector2f(deLoreanPos.x - 75, deLoreanPos.y - 30));
-        fireAnimations.emplace_back(fireTexture,sf::Vector2f(deLoreanPos.x - 75, deLoreanPos.y - 5));
+        fireAnimations.emplace_back(fireTexture, sf::Vector2f(deLoreanPos.x - 75, deLoreanPos.y - 30));
+        fireAnimations.emplace_back(fireTexture, sf::Vector2f(deLoreanPos.x - 75, deLoreanPos.y - 5));
     }
-    for (auto &fire : fireAnimations) {
+    for (auto &fire: fireAnimations) {
         fire.update();
     }
 
@@ -483,19 +517,20 @@ void MainWindow::UpdateAnimations() {
     lightnings.erase(std::remove_if(lightnings.begin(), lightnings.end(), [](Lightning &l) { return l.isFinished(); }),
                      lightnings.end());
 
-    for (auto& thundercloud : thunderclouds) {
+    for (auto &thundercloud: thunderclouds) {
         thundercloud.update(*this, currentSpeed); // Обновление положения тучи
     }
 
-    float time = remainingTime - 5 >= 0 ? remainingTime - 5: 0;
+    float time = remainingTime - 5 >= 0 ? remainingTime - 5 : 0;
     clockFace->update(time);
 
     if (isCharacterFalling) {
         characterFallSpeed += 0.1f; // Increase falling speed (gravity effect)
         characterSprite.move(0, characterFallSpeed);
         characterSprite.rotate(characterRotationSpeed); // Rotate the character around its center
-        if (characterSprite.getPosition().y + characterSprite.getGlobalBounds().height / 2 >= this->getSize().y - 300) {
-            characterSprite.setPosition(characterSprite.getPosition().x, this->getSize().y - characterSprite.getGlobalBounds().height / 2 - 300);
+        if (characterSprite.getPosition().y + characterSprite.getGlobalBounds().height / 2 >= this->getSize().y - 300.0) {
+            characterSprite.setPosition(characterSprite.getPosition().x,
+                                        static_cast<float>(this->getSize().y) - characterSprite.getGlobalBounds().height / 2 - 300);
             isCharacterFalling = false; // Stop the character from falling further
             characterSprite.setRotation(90.0f); // Set the character to lie horizontally
         }
@@ -589,7 +624,7 @@ void MainWindow::UpdateTimer() {
         quit = true; // End the game
     }
 
-    float time = remainingTime - 5 >= 0 ? remainingTime - 5: 0;
+    float time = remainingTime - 5 >= 0 ? remainingTime - 5 : 0;
     timerText.setString(cv.from_bytes("Осталось: ") + std::to_string(static_cast<int>(time)) + " s");
     clockFace->update(time);
 }

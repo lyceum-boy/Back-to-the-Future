@@ -72,8 +72,10 @@ public:
     Texture thundercloudTexture;
     std::vector<Thundercloud> thunderclouds;
 
+    // -----------------------------------------------------
     sf::Texture characterTexture;
     sf::Sprite characterSprite;
+
     bool isCharacterFalling = false; // Track falling state
     float characterFallSpeed = 0.0f; // Speed of the fall
     float characterRotationSpeed = 0.0f; // Speed of rotation
@@ -84,6 +86,7 @@ public:
     float characterFlyMaxY{};
     float characterFlyMinY{};
 
+    // ----------------------------------
     bool isGameOver = false;
     bool isVictory = false;
 
@@ -92,15 +95,13 @@ public:
 
     bool isDeloreanSpriteMoving = false;
 
-    bool wasThunder = false;
     bool isFullscreen = false;
 
     bool deLoreanOnFirstRoad = true;
 
-    std::wstring_convert<std::codecvt_utf8<wchar_t>> cv;
-
     float totalPlayerTime{};
 
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> cv;
 
 public:
     MainWindow(VideoMode vm, const std::string &str, int i);

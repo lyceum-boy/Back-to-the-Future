@@ -2,6 +2,9 @@
 // Created by anoso on 16.06.2024.
 //
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "cert-msc50-cpp"
+
 #include <iostream>
 #include "DeLorean.h"
 #include "GameOverScreen.h"
@@ -92,7 +95,7 @@ void DeLorean::accelerate(MainWindow &window) {
             if (window.curMusic.openFromFile(window.songs[0]))
                 window.curMusic.play();
         }
-        if (window.IsItTimeYet(time)) {
+        if (MainWindow::IsItTimeYet(time)) {
             window.DrawBackground();
             window.DrawSpeedometer();
             window.UpdateRoad();
@@ -123,3 +126,5 @@ void DeLorean::accelerate(MainWindow &window) {
     // После завершения игры возвращаемся в главное меню
     window.quit = false;
 }
+
+#pragma clang diagnostic pop
