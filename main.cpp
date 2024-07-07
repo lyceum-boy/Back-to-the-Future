@@ -21,11 +21,9 @@
 
 #include "MainWindow.h"  // Класс главного окна программы.
 #include "MainMenu.h"    // Класс меню игры.
-#include "DeLorean.h"    // Класс ДеЛориана, логика обработки его управления.
+#include "DeLorean.h"    // Класс ДеЛориана, логика игрового процесса.
 
-#define ICON_PATH "static/img/icon.png"  // Иконка мини-игры.
-
-using namespace sf;
+using namespace sf;  // Пространство имён библиотеки SFML.
 
 // Состояние окна.
 enum class GameState {
@@ -45,9 +43,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char *argv[]) {
     );
 
     // Загрузка иконки окна мини-игры.
-    sf::Image icon;
-    icon.loadFromFile(ICON_PATH);
-    window.setIcon(icon.getSize().x, icon.getSize().y, icon.getPixelsPtr());
+    window.setMainWindowIcon();
 
     // Установка начального состояния игры - главного меню.
     GameState gameState = GameState::MainMenu;
@@ -57,7 +53,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char *argv[]) {
 
     MainMenu menu;  // Объект, создающий в окне главное меню.
 
-    menu.curMusic.setVolume(50);
+    menu.curMusic.setVolume(75);
 
     // Основной цикл приложения.
     while (window.isOpen()) {
@@ -78,11 +74,11 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char *argv[]) {
                 break;
             case GameState::HowToPlay:
                 // Отрисовка подменю "Как играть" Главного меню в окне мини-игры.
-                menu.showHowToPlay(window);
+                menu.displayHowToPlay(window);
                 break;
             case GameState::About:
                 // Отрисовка подменю "Об игре" Главного меню в окне мини-игры.
-                menu.showAbout(window);
+                menu.displayAbout(window);
                 break;
         }
 
@@ -134,11 +130,13 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char *argv[]) {
                         window.create(VideoMode(1024, 768),
                                       "Back to the Future",
                                       sf::Style::Fullscreen);
+                        window.setMainWindowIcon();
                     } else {  // И выход из него.
                         window.isFullscreen = false;
                         window.create(VideoMode(1024, 768),
                                       "Back to the Future",
                                       sf::Style::Titlebar | sf::Style::Close);
+                        window.setMainWindowIcon();
                     }
                 }
             }

@@ -5,13 +5,15 @@
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "cert-msc50-cpp"
 
-#include <iostream>
-#include "DeLorean.h"
-#include "GameOverScreen.h"
-#include "VictoryScreen.h"
+#include "DeLorean.h"        // Класс ДеЛориана, логика игрового процесса.
+#include "GameOverScreen.h"  // Класс окна поражения.
+#include "VictoryScreen.h"   // Класс окна победы.
 
+using namespace sf;  // Пространство имён библиотеки SFML.
+
+// Метод запуска ДеЛориана и игрового процесса.
 void DeLorean::accelerate(MainWindow &window) {
-    if (window.curMusic.openFromFile(window.songs[rand() % 1]))
+    if (window.curMusic.openFromFile(window.songs[0]))
         window.curMusic.play();
 
     GameOverScreen gameOverMenu;
@@ -20,17 +22,15 @@ void DeLorean::accelerate(MainWindow &window) {
     window.sounds[4].play();
 
     while (!window.quit) {
-        // window.PollEvents();
-
-        sf::Event event{};
+        Event event{};
         while (window.pollEvent(event)) {
             switch (event.type) {
-                case sf::Event::Closed: {
+                case Event::Closed: {
                     window.quit = true;
                     window.close();
                     break;
                 }
-                case sf::Event::KeyPressed:
+                case Event::KeyPressed:
                     if (event.key.scancode == Keyboard::Scan::Escape)
                         window.quit = true;
                     // Переход в полноэкранный режим при нажатии клавиши F.
@@ -39,17 +39,14 @@ void DeLorean::accelerate(MainWindow &window) {
                             window.isFullscreen = true;
                             window.create(VideoMode(1024, 768),
                                           "Back to the Future",
-                                          sf::Style::Fullscreen);
+                                          Style::Fullscreen);
+                            window.setMainWindowIcon();
                         } else {  // И выход из него.
                             window.isFullscreen = false;
                             window.create(VideoMode(1024, 768),
                                           "Back to the Future",
-                                          sf::Style::Titlebar | sf::Style::Close);
-// todo
-                            //                            // Загрузка иконки окна мини-игры.
-//                            sf::Image icon;
-//                            icon.loadFromFile(ICON_PATH);
-//                            window.setIcon(icon.getSize().x, icon.getSize().y, icon.getPixelsPtr());
+                                          Style::Titlebar | Style::Close);
+                            window.setMainWindowIcon();
                         }
                     }
                     if (event.key.scancode == Keyboard::Scan::Up || event.key.scancode == Keyboard::Scan::W) {
@@ -78,12 +75,6 @@ void DeLorean::accelerate(MainWindow &window) {
                             }
                         }
                     }
-                    if (event.key.scancode == Keyboard::Scan::Space) {
-                        window.currentSpeed += window.speedIncrement;
-                        if (window.currentSpeed > window.maxSpeed)
-                            window.currentSpeed = window.maxSpeed;
-                        window.UpdateSpeedometer();
-                    }
                     break;
                 default:
                     break;
@@ -100,17 +91,17 @@ void DeLorean::accelerate(MainWindow &window) {
             window.DrawSpeedometer();
             window.UpdateRoad();
             if (window.currentSpeed >= window.maxSpeed)
-                window.DeLoreanAway();
-            window.UpdateBonuses(); // Обновление бонусов
+                window.BackToTheFuture();
+            window.UpdateBonuses();
             window.UpdateAnimations();
-            window.CheckCollisions(); // Проверка коллизий
-            window.UpdateTimer(); // Update the timer
+            window.CheckCollisions();
+            window.UpdateTimer();
             window.display();
             window.clear();
             window.mainTimer.restart();
         }
 
-        // Проверка на условия проигрыша или победы
+        // Проверка на условия проигрыша или победы.
         if (window.remainingTime <= 0) {
             window.curMusic.setVolume(75);
             if (window.isGameOver) {
@@ -123,7 +114,7 @@ void DeLorean::accelerate(MainWindow &window) {
 
     }
 
-    // После завершения игры возвращаемся в главное меню
+    // После завершения игры возвращаемся в главное меню.
     window.quit = false;
 }
 

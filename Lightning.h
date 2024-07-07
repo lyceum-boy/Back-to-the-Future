@@ -7,23 +7,35 @@
 
 #include <vector>
 
+// Модуль для работы с графикой в библиотеке SFML.
 #include <SFML/Graphics.hpp>
 
+#include "Animation.h"  // Абстрактный базовый класс анимации.
 
-class Lightning {
+using namespace sf;  // Пространство имён библиотеки SFML.
+
+
+// Класс-наследник Animation, реализующий анимацию молнии.
+class Lightning : public Animation {
 public:
-    Lightning(sf::Texture &texture, sf::Vector2f position);
-    void update();
-    void draw(sf::RenderWindow &window);
-    bool isFinished() const;
+    Lightning(Texture &texture, Vector2f position);
+
+    // Метод обновления кадров анимации.
+    void update() override;
+
+    // Метод отрисовки кадра анимации.
+    void draw(RenderWindow &window) override;
+
+    // Метод проверки окончания анимации.
+    bool isFinished() const override;
 
 private:
-    sf::Sprite sprite;
-    std::vector<sf::IntRect> frames;
-    int currentFrame;
-    float frameDuration;
-    float elapsedTime;
-    bool finished;
+    Sprite sprite;                // Спрайт.
+    std::vector<IntRect> frames;  // Кадры анимации.
+    int currentFrame;             // Текущий кадр анимации.
+    float frameDuration;          // Продолжительность кадра анимации.
+    float elapsedTime;            // Время с момента обновления кадра.
+    bool finished;                // Флаг завершения анимации.
 };
 
 

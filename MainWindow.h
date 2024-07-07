@@ -5,144 +5,180 @@
 #ifndef ITIP_CPP_PR_5_HDL_MAINWINDOW_H
 #define ITIP_CPP_PR_5_HDL_MAINWINDOW_H
 
+// Используется для конвертации строки в UTF-8 для отрисовки кириллических символов.
 #include <codecvt>
 
+// Модуль для работы с графикой в библиотеке SFML.
 #include <SFML/Graphics.hpp>
+// Модуль для работы с аудио в библиотеке SFML.
 #include <SFML/Audio.hpp>
 
-#include "ClockFace.h"
-#include "Explosion.h"
-#include "FireAnimation.h"
-#include "Lightning.h"
-#include "Thundercloud.h"
+#include "ClockFace.h"     // Класс циферблата стрелочных часов.
+#include "Explosion.h"     // Класс анимации взрыва.
+#include "FireTrace.h"     // Класс анимации огненного следа от колёс.
+#include "Lightning.h"     // Класс анимации молнии.
+#include "Thundercloud.h"  // Класс грозовой тучи.
 
-using namespace sf;
+// Игровые константы.
+#define INITIAL_TIME 100  // Время таймера обратного отсчёта.
+#define INITIAL_SPEED 8   // Начальная скорость.
+#define MAXIMAL_SPEED 88  // Максимальная скорость.
+
+using namespace sf;  // Пространство имён библиотеки SFML.
 
 
+// Класс основного окна игры.
 class MainWindow : public RenderWindow {
 public:
     std::vector<Texture> images;     // Вектор текстур.
     std::vector<Sprite> sprites;     // Вектор спрайтов.
-    std::vector<std::string> songs;  // Вектор фоновой музыки.
-    std::vector<SoundBuffer> buf;
+    std::vector<std::string> songs;  // Вектор путей к фоновой музыке.
+    std::vector<SoundBuffer> buf;    // Вектор буферов звуков.
     std::vector<Sound> sounds;       // Вектор звуков.
 
-    Music curMusic;
-    Font font;
-    Clock mainTimer;
-    Text mainTitle;
+    Music curMusic;   // Текущая фоновая музыка.
+    Font textFont;    // Шрифт основного текста.
+    Clock mainTimer;  // Таймер отрисовки кадров.
 
-    bool quit = false;
+    // Поля, связанные со скоростью ДеЛориана.
 
-    sf::Text speedText;
+    Text speedText;  // Текущая скорость.
 
+    // Шкала спидометра.
     std::vector<RectangleShape> speedometerCells;
-    float maxPlayerSpeed{};
-    float currentSpeed{};  // Current speed in km/h
-    const float maxSpeed = 88.0f;  // Maximum speed in km/h
-    const float speedIncrement = 8.0f;  // Speed increment in km/h
 
-    // Новые переменные для бонусов
+    float currentSpeed = INITIAL_SPEED;
+    const float maxSpeed = MAXIMAL_SPEED;
+    const float speedIncrement = INITIAL_SPEED;
+
+    // Поля для ускоряющих и тормозящих бонусов.
+
     Texture acceleratorTexture;
     Sprite acceleratorSprite;
+
     std::vector<Texture> deceleratorTextures;
     Sprite deceleratorSprite;
 
-    std::vector<bool> deceleratorHistory;  // История появления замедлителей и ускорителей
+    // История появления ускоряющих и тормозящих бонусов.
+    std::vector<bool> deceleratorHistory;
 
-    bool hasAccelerator = false;
-    bool hasDecelerator = false;
+    bool hasAccelerator = false;  // Флаг наличия на экране ускорителя.
+    bool hasDecelerator = false;  // Флаг наличия на экране замедлителя.
 
-    Clock bonusTimer;
+    Clock bonusTimer;  // Таймер появления бонусов.
 
-    bool isFirstBonus = true;
+    bool isFirstBonus = true;  // Первый бонус в игре всегда ускоритель.
 
-    Clock countdownClock;      // Clock to track elapsed time
-    float remainingTime{};       // Remaining time in seconds
-    Text timerText;            // Text to display the timer
+    // Поля, связанные со временем.
 
-    sf::Texture explosionTexture;
+    Clock countdownClock;   // Таймер обратного отсчёта.
+    float remainingTime{};  // Оставшееся время в секундах.
+
+    Text timerText;         // Оставшееся время.
+
+    // Поля для анимаций.
+
+    Texture explosionTexture;
     std::vector<Explosion> explosions;
 
-    sf::Texture lightningTexture;
+    Texture fireTexture;
+    std::vector<FireTrace> fireTraces;
+
+    Texture lightningTexture;
     std::vector<Lightning> lightnings;
 
-    ClockFace* clockFace{};
+    // Инициализация стрелочных часов.
+    ClockFace *clockFace{};
 
     Texture thundercloudTexture;
     std::vector<Thundercloud> thunderclouds;
 
-    // -----------------------------------------------------
-    sf::Texture characterTexture;
-    sf::Sprite characterSprite;
+    // Поля, связанные с доктором Эмметом Брауном.
 
-    bool isCharacterFalling = false; // Track falling state
-    float characterFallSpeed = 0.0f; // Speed of the fall
-    float characterRotationSpeed = 0.0f; // Speed of rotation
+    Texture brownTexture;
+    Sprite brownSprite;
 
-    bool isCharacterFlying{};
-    float characterFlySpeed{};
-    float characterFlyDirection{};
-    float characterFlyMaxY{};
-    float characterFlyMinY{};
+    bool isBrownFalling = false;      // Флаг падения.
+    float brownFallSpeed = 1.0f;      // Скорость падения.
+    float brownRotationSpeed = 5.0f;  // Скорость вращения.
 
-    // ----------------------------------
-    bool isGameOver = false;
-    bool isVictory = false;
+    bool isBrownJumping = false;      // Флаг падения.
+    float brownJumpSpeed = 2.0f;      // Скорость прыжка.
+    float brownJumpDirection = 1.0f;  // Направление движения (1 - вверх, -1 - вниз).
+    float brownJumpMaxY = brownSprite.getPosition().y - 20;  // Верхняя граница движения.
+    float brownJumpMinY = brownSprite.getPosition().y;       // Нижняя граница движения.
 
-    std::vector<FireAnimation> fireAnimations;
-    sf::Texture fireTexture;
+    // Переменные, связанные с состоянием игры и окна.
 
-    bool isDeloreanSpriteMoving = false;
+    bool isGameOver = false;  // Флаг поражения.
+    bool isVictory = false;   // Флаг победы.
 
-    bool isFullscreen = false;
-
+    /* Флаг нахождения ДеЛориана на верхней полосе дороги
+     * для корректного проигрывания звука drift.mp3. */
     bool deLoreanOnFirstRoad = true;
 
-    float totalPlayerTime{};
+    // Флаг отправки ДеЛориана назад в будущее.
+    bool isDeloreanSpriteMoving{};
 
+    // Флаг полноэкранного режима.
+    bool isFullscreen = false;
+
+    // Счётчики очков для экрана окончания игры.
+    float maxPlayerSpeed{};   // Максимальная набранная скорость.
+    float totalPlayerTime{};  // Затраченное пользователем время.
+
+    bool quit = false;  // Флаг завершения игры.
+
+    // Конвертер строки для отрисовки кириллических символов в UTF-8.
     std::wstring_convert<std::codecvt_utf8<wchar_t>> cv;
 
 public:
     MainWindow(VideoMode vm, const std::string &str, int i);
 
+    // Метод инициализации окна игры при запуске и перезапуске.
     void init();
 
-    void DrawBackground();
-
-    void DrawSpeedometer();
-
-    void UpdateSpeedometer();
-
-    void UpdateRoad(); // Декларация метода обновления дороги
-
-    void UpdateBonuses(); // Декларация метода обновления бонусов
-
-    void UpdateAnimations();
-
-    void CheckCollisions(); // Декларация метода проверки коллизий
-
-    static bool IsItTimeYet(int time) {
-        if (time > 25)
-            return true;
-        return false;
-    };
-
-    void UpdateTimer(); // Update the timer
-
-    void resetTimer() {
-        remainingTime = 100.0f; // Reset the timer to 100 seconds
-        countdownClock.restart(); // Restart the clock
-    }
-
-    void reset() {
-        resetTimer();
-        init();
-    }
-    void LoadTextures();
+    // Метод создания грозовых туч в небе над дорогой.
     void CreateThunderclouds();
 
-    void DeLoreanAway();
+    // Метод отрисовки фона и всех игровых объектов.
+    void DrawBackground();
+
+    // Метод отрисовки спидометра на экране.
+    void DrawSpeedometer();
+
+    // Метод обновления шкалы спидометра.
+    void UpdateSpeedometer();
+
+    // Метод обновления положения дороги.
+    void UpdateRoad();
+
+    // Метод создания и обновления положения бонусов.
+    void UpdateBonuses();
+
+    // Метод обновления кадров анимаций.
+    void UpdateAnimations();
+
+    // Метод проверки коллизий.
+    void CheckCollisions();
+
+    // Метод обновления таймера обратного отсчёта.
+    void UpdateTimer();
+
+    // Метод отправки ДеЛориана назад в будущее.
+    void BackToTheFuture();
+
+    // Метод проверки необходимости отрисовки следующего кадра игры.
+    static bool IsItTimeYet(int time);
+
+    // Метод перезапуска таймера обратного отсчёта.
+    void resetTimer();
+
+    // Метод перезапуска игры.
+    void reset();
+
+    // Метод установки иконки приложения.
+    void setMainWindowIcon();
 };
 
 
